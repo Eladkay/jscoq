@@ -34,55 +34,8 @@ import { CompanyCoq }  from './addon/company-coq.js';
 // CodeMirror
 import { CmCoqProvider } from './cm-provider';
 
-class CoqCodeMirror extends CmCoqProvider {
-
-    // element e
- 
-    constructor(elems) {
- 
-        let e = document.getElementById(elems[0]);
-
-        var cmOpts =
-            { mode : { name : "coq",
-                       version: 4,
-                       singleLineStringErrors : false
-                     },
-              lineNumbers       : true,
-              indentUnit        : 2,
-              tabSize           : 2,
-              indentWithTabs    : false,
-              matchBrackets     : true,
-              styleSelectedText : true,
-              dragDrop          : false, /* handled by CoqManager */
-              keyMap            : "jscoq",
-              className         : "jscoq"
-            };
-        super(e, cmOpts, false, 0);
- 
-        e.style.height = 'auto';
-    }
-
-    getValue() {
-        return this.getText();
-    }
-
-    clearMarks() {
-        for (let m of this.editor.getAllMarks()) {
-            m.clear();
-        }
-    }
-
-    markDiagnostic(d) {
-
-        var from = { line: d.range.start.line, ch: d.range.start.character };
-        var to = { line: d.range._end.line, ch: d.range._end.character };
-
-        var doc = this.editor.getDoc();
-        var mclass = (d.severity === 1) ? 'coq-eval-failed' : 'coq-eval-ok';
-
-        doc.markText(from, to, {className: mclass});
-    }
-}
+import { CoqCodeMirror } from './coq-editor-cm5.js';
+import { CoqProseMirror } from './coq-editor-pm.js';
 
 /**
  * Coq Document Manager, client-side.
@@ -112,6 +65,7 @@ export class CoqManager {
         // Default options
         this.options = {
             prelaunch:  false,
+            prosemirror: true,
             prelude:    true,
             debug:      true,
             show:       true,
@@ -139,17 +93,15 @@ export class CoqManager {
         }
 
         // Setup the Coq editor.
-        var pm = false;
-
-        if (pm) {
+        if (this.options.prosemirror) {
             this.editor = new CoqProseMirror(elems);
-            this.editor.onCMChange = evt => {
-                this.coq.update(this.editor.getValue());
+            this.editor.onChange = newText => {
+                this.coq.update(newText);
             }
         } else {
             CmCoqProvider._set_keymap();
             this.editor = new CoqCodeMirror(elems);
-            this.editor.onCMChange = evt => {
+            this.editor.onChange = evt => {
                 this.coq.update(this.editor.getValue());
             }
         };
@@ -173,7 +125,7 @@ export class CoqManager {
             if (this.coq) this.layout.onToggle = () => {};
         };
 
-        this._setupSettings();
+        // this._setupSettings();
         this._setupDragDrop();
 
         // Setup pretty printer for feedback and goals
@@ -377,6 +329,7 @@ export class CoqManager {
     coqNotification(diags) {
         this.editor.clearMarks();
 
+        console.log("Diags received: " + diags.length.toString());
         for (let d of diags) {
             // d_str = JSON.stringify(d);
             // this.layout.log("Diag", 'Info');

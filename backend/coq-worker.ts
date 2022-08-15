@@ -1,8 +1,15 @@
+/* jsCoq
+ *
+ * Copyright (C) 2016-2019 Emilio J. Gallego Arias, Mines ParisTech, Paris.
+ * Copyright (C) 2018-2022 Shachar Itzhaky, Technion - Israel Institute of Technology, Haifa
+ * Copyright (C) 2019-2022 Emilio J. Gallego Arias, Inria, Paris
+ */
+
 export type backend = 'js' | 'wa';
 
 import { Future, PromiseFeedbackRoute } from './future';
 
-type Block_type = 
+type Block_type =
     ['Pp_hbox']
   | ['Pp_vbox', number]
   | ['Pp_hvbox', number]
