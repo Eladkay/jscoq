@@ -23,6 +23,25 @@ class ICoqEditor {
     markDiagnostic(diag) { }
 }
 
+// Takes a textArea and will create an empty div to attach an editor
+// to.
+function editorAppend(eId) {
+
+    var area = document.getElementById(eId);
+
+    area.style.display = 'none';
+
+    // Create container for editor
+    const container = document.createElement('div');
+    container.classList = area.classList;
+
+    if (area.nextSibling) {
+        area.parentElement.insertBefore(container, area.nextSibling);
+    } else {
+        area.parentElement.appendChild(container);
+    }
+    return { container, area };
+}
 
 // Local Variables:
 // js-indent-level: 4

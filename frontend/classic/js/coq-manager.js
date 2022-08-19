@@ -29,12 +29,15 @@ import { copyOptions, isMac, ArrayFuncs, arreq_deep } from '../../common/etc.js'
 import { PackageManager } from './coq-packages.js';
 import { CoqLayoutClassic } from './coq-layout-classic.js';
 import { CoqContextualInfo } from './contextual-info.js';
+
+// XXX Port to CM 6.x
 import { CompanyCoq }  from './addon/company-coq.js';
 
 // CodeMirror
 import { CmCoqProvider } from './cm-provider';
 
-import { CoqCodeMirror } from './coq-editor-cm5.js';
+import { CoqCodeMirror5 } from './coq-editor-cm5.js';
+import { CoqCodeMirror6 } from './coq-editor-cm6';
 import { CoqProseMirror } from './coq-editor-pm.js';
 
 /**
@@ -65,7 +68,7 @@ export class CoqManager {
         // Default options
         this.options = {
             prelaunch:  false,
-            prosemirror: true,
+            prosemirror: false,
             prelude:    true,
             debug:      true,
             show:       true,
@@ -100,7 +103,7 @@ export class CoqManager {
             }
         } else {
             CmCoqProvider._set_keymap();
-            this.editor = new CoqCodeMirror(elems);
+            this.editor = new CoqCodeMirror6(elems);
             this.editor.onChange = evt => {
                 this.coq.update(this.editor.getValue());
             }
@@ -206,7 +209,8 @@ export class CoqManager {
      */
     loadSymbolsFrom(url, scope="globals") {
         $.get({url, dataType: 'json'}).done(data => {
-            CompanyCoq.loadSymbols(data, scope, /*replace_existing=*/false);
+            return;
+            // CompanyCoq.loadSymbols(data, scope, /*replace_existing=*/false);
         })
         .fail((_, status, msg) => {
             console.warn(`Symbol resource unavailable: ${url} (${status}, ${msg})`)

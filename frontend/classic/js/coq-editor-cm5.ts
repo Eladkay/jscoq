@@ -20,7 +20,7 @@ import './mode/coq-mode.js';
 import { CmCoqProvider } from './cm-provider.js';
 
 
-export class CoqCodeMirror extends CmCoqProvider {
+export class CoqCodeMirror5 extends CmCoqProvider {
 
     // element e
     constructor(elems : string[]) {
