@@ -1,11 +1,12 @@
+//@ts-check
+"use strict";
+
 /* jsCoq
  *
  * Copyright (C) 2016-2019 Emilio J. Gallego Arias, Mines ParisTech, Paris.
  * Copyright (C) 2018-2022 Shachar Itzhaky, Technion - Israel Institute of Technology, Haifa
  * Copyright (C) 2019-2022 Emilio J. Gallego Arias, Inria, Paris
  */
-
-"use strict";
 
 /**
  * Interface for Coq Editor's
@@ -25,7 +26,7 @@ class ICoqEditor {
 
 // Takes a textArea and will create an empty div to attach an editor
 // to.
-function editorAppend(eId) {
+export function editorAppend(eId) {
 
     var area = document.getElementById(eId);
 

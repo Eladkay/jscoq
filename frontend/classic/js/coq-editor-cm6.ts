@@ -4,6 +4,8 @@ import { EditorView, lineNumbers, Decoration, ViewPlugin } from "@codemirror/vie
 
 // import './mode/coq-mode.js';
 
+import { editorAppend } from "./coq-editor";
+
 const clearDiag = StateEffect.define<{}>({});
 
 const addDiag = StateEffect.define<{from : number, to: number, d : Decoration}>(
@@ -38,7 +40,7 @@ export class CoqCodeMirror6 {
     view : EditorView;
 
     // element e
-    constructor(eId) {
+    constructor(eIds : string[]) {
 
         var cmOpts =
             { mode : { name : "coq",
@@ -56,7 +58,7 @@ export class CoqCodeMirror6 {
               className         : "jscoq"
             };
 
-        let { container, area } = editorAppend(eId);
+        let { container, area } = editorAppend(eIds[0]);
 
         var obj_ref = this;
 

@@ -96,17 +96,13 @@ export class CoqManager {
         }
 
         // Setup the Coq editor.
-        if (this.options.prosemirror) {
-            this.editor = new CoqProseMirror(elems);
-            this.editor.onChange = newText => {
-                this.coq.update(newText);
-            }
-        } else {
-            CmCoqProvider._set_keymap();
-            this.editor = new CoqCodeMirror6(elems);
-            this.editor.onChange = evt => {
-                this.coq.update(this.editor.getValue());
-            }
+        CmCoqProvider._set_keymap();
+
+        var CoqEditor = this.options.prosemirror ? CoqProseMirror : CoqCodeMirror6;
+
+        this.editor = new CoqEditor(elems);
+        this.editor.onChange = newText => {
+            this.coq.update(newText);
         };
 
         /** @type {PackageManager} */
@@ -331,6 +327,7 @@ export class CoqManager {
 
     // Coq document diagnostics.
     coqNotification(diags) {
+
         this.editor.clearMarks();
 
         console.log("Diags received: " + diags.length.toString());
