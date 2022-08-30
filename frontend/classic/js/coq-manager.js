@@ -21,6 +21,7 @@ import { CoqIdentifier } from '../../../backend/coq-identifier.js';
 // UI imports
 import $ from 'jquery';
 import { FormatPrettyPrint } from '../../format-pprint/js';
+import { throttle } from 'throttle-debounce';
 
 // Common imports
 import { copyOptions, isMac, ArrayFuncs, arreq_deep } from '../../common/etc.js';
@@ -101,9 +102,9 @@ export class CoqManager {
         var CoqEditor = this.options.prosemirror ? CoqProseMirror : CoqCodeMirror6;
 
         this.editor = new CoqEditor(elems);
-        this.editor.onChange = newText => {
+        this.editor.onChange = throttle(200, newText => {
             this.coq.update(newText);
-        };
+        });
 
         /** @type {PackageManager} */
         this.packages = null;
