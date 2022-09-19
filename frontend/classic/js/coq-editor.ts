@@ -28,13 +28,14 @@ class ICoqEditor {
 // to.
 export function editorAppend(eId) {
 
-    var area = document.getElementById(eId);
+    var area = document.getElementById(eId) as HTMLTextAreaElement;
 
     area.style.display = 'none';
 
     // Create container for editor
     const container = document.createElement('div');
-    container.classList = area.classList;
+    container.setAttribute('spellCheck', "false");
+    container.className = area.className;
 
     if (area.nextSibling) {
         area.parentElement.insertBefore(container, area.nextSibling);

@@ -100,10 +100,6 @@ export class CoqCodeMirror6 {
         this.view.dispatch(tr);
     }
 
-    buildDecSet() {
-        return this.decorationSet;
-    }
-
     markDiagnostic(d) {
 
         var from = d.range.start_pos, to = d.range.end_pos;

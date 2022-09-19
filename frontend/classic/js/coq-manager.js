@@ -69,7 +69,7 @@ export class CoqManager {
         // Default options
         this.options = {
             prelaunch:  false,
-            prosemirror: false,
+            prosemirror: true,
             prelude:    true,
             debug:      true,
             show:       true,

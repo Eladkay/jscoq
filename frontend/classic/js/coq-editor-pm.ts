@@ -1,7 +1,9 @@
+//@ts-check
+"use strict";
+
 // Prosemirror implementation
-import { EditorView } from 'prosemirror-view';
-import { EditorState } from 'prosemirror-state';
-// import { DOMParser } from 'prosemirror-model';
+import { EditorView, Decoration, DecorationSet } from 'prosemirror-view';
+import { EditorState, Plugin } from 'prosemirror-state';
 import { schema, defaultMarkdownParser, defaultMarkdownSerializer } from 'prosemirror-markdown';
 import { exampleSetup } from 'prosemirror-example-setup';
 
@@ -9,34 +11,59 @@ import 'prosemirror-view/style/prosemirror.css';
 import 'prosemirror-menu/style/menu.css';
 import 'prosemirror-example-setup/style/style.css';
 
+import { editorAppend } from './coq-editor.js';
+
+function diagNew(d) {
+    var mark_class = (d.severity === 1) ? 'coq-eval-failed' : 'coq-eval-ok';
+    return Decoration.inline(d.range.start_pos + 1, d.range.end_pos + 1, { class: mark_class });
+}
+
+function diagDecorations(doc, diags) {
+
+    // console.log(diags);
+    let ds = DecorationSet.create(doc, diags.map(diagNew));
+    return ds;
+
+}
+
+let coqDiags = new Plugin({
+    props: {
+        decorations(st) {
+            let diags = this.getState(st);
+            return diagDecorations(st.doc, diags);
+        }
+    },
+    state: {
+        init(_config,_instance) { return [] },
+        apply(tr, old) {
+            var m = tr.getMeta(coqDiags);
+            if (m) {
+                if(m == "clear") {
+                    return [];
+                } else {
+                    return old.concat([m])
+                }
+            } else { return old; }
+        }
+    }
+})
+
 export class CoqProseMirror {
     view : EditorView;
 
     // eId must be a textarea
-    constructor(eIds : string []) {
+    constructor(eIds) {
 
-        var area = document.getElementById(eIds[0]) as HTMLTextAreaElement;
-
-        area.style.display = 'none';
-
-        // Create container for editor
-        const container = document.createElement('div');
-        container.classList = area.classList;
-
-        if (area.nextSibling) {
-            area.parentElement.insertBefore(container, area.nextSibling);
-        } else {
-            area.parentElement.appendChild(container);
-        }
+        let { container, area } = editorAppend(eIds[0]);
 
         var doc = defaultMarkdownParser.parse(area.value);
+        var obj_ref = this;
 
-        var editor = this;
         this.view =
             new EditorView(container, {
                 state: EditorState.create({
                     doc: doc,
-                    plugins: exampleSetup({schema})
+                    plugins: [...exampleSetup({schema: schema}), coqDiags]
                 }),
                 // We update the text area
                 dispatchTransaction(tr) {
@@ -44,9 +71,10 @@ export class CoqProseMirror {
                     this.updateState(state);
                     // Update textarea only if content has changed
                     if (tr.docChanged) {
-                        var newText = defaultMarkdownSerializer.serialize(tr.doc);
-                        area.value = newText;
-                        editor.onChange(newText);
+                        let newDoc = CoqProseMirror.serializeDoc(tr.doc);
+                        obj_ref.onChange(newDoc);
+                        var newMarkdown = defaultMarkdownSerializer.serialize(tr.doc);
+                        area.value = newMarkdown;
                     }
                 },
             });
@@ -54,8 +82,15 @@ export class CoqProseMirror {
         this.view.focus();
     }
 
+    static serializeDoc(doc) {
+        var acc = [];
+        doc.descendants(CoqProseMirror.process_node(acc));
+        let res = CoqProseMirror.flatten_chunks(acc);
+        return res;
+    }
+
     getValue() {
-        return defaultMarkdownSerializer.serialize(this.view.state.doc)
+        return CoqProseMirror.serializeDoc(this.view.state.doc);
     }
 
     onChange(newText) {
@@ -63,7 +98,9 @@ export class CoqProseMirror {
     }
 
     clearMarks() {
-        return;
+        var tr = this.view.state.tr;
+        tr.setMeta(coqDiags, "clear");
+        this.view.dispatch(tr);
     }
 
     markDiagnostic(d) {
@@ -71,16 +108,33 @@ export class CoqProseMirror {
         var from = d.range.start_pos, to = d.range.end_pos;
 
         console.log("mark from " + from.toString() + " to " + to.toString());
-        return;
 
-        var mark_class = (d.severity === 1) ? 'coq-eval-failed' : 'coq-eval-ok';
+        var tr = this.view.state.tr;
+        tr.setMeta(coqDiags, d);
+        this.view.dispatch(tr);
 
-        // from prosemirror transform
-        var tr = addMark(from, to, mark);
+    }
 
-        this.view.state.applyTransaction(tr);
+    static process_node(acc) {
+        return (node, pos, parent, index) => {
+            if (node.type.name == 'code_block') {
+                let text = node.textContent;
+                acc.push( { pos, text } );
+                return true;
+            }
+        }
+    }
 
-        return;
+    static flatten_chunks(acc) {
+        var res = "";
+        for (let c of acc) {
+            let offset = c.pos - res.length;
+            res += ' '.repeat(offset) + c.text;
+        }
+        return res;
     }
 }
 
+// Local Variables:
+// js-indent-level: 4
+// End:
