@@ -18,6 +18,15 @@ function diagNew(d) {
     return Decoration.inline(d.range.start_pos + 1, d.range.end_pos + 1, { class: mark_class });
 }
 
+function diagMap(tr) {
+    return (d) => {
+        var new_d = {...d};
+        new_d.range.start_pos = tr.mapping.map(d.range.start_pos);
+        new_d.range.end_pos = tr.mapping.map(d.range.end_pos);
+        return new_d;
+    }
+}
+
 function diagDecorations(doc, diags) {
 
     // console.log(diags);
@@ -35,15 +44,18 @@ let coqDiags = new Plugin({
     },
     state: {
         init(_config,_instance) { return [] },
-        apply(tr, old) {
+        apply(tr, cur) {
             var m = tr.getMeta(coqDiags);
             if (m) {
                 if(m == "clear") {
                     return [];
                 } else {
-                    return old.concat([m])
+                    return cur.concat([m])
                 }
-            } else { return old; }
+            } else { 
+                let mapping = diagMap(tr);
+                return cur.map(mapping);
+             }
         }
     }
 })
