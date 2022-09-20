@@ -18,43 +18,24 @@ function diagNew(d) {
     return Decoration.inline(d.range.start_pos + 1, d.range.end_pos + 1, { class: mark_class });
 }
 
-function diagMap(tr) {
-    return (d) => {
-        var new_d = {...d};
-        new_d.range.start_pos = tr.mapping.map(d.range.start_pos);
-        new_d.range.end_pos = tr.mapping.map(d.range.end_pos);
-        return new_d;
-    }
-}
-
-function diagDecorations(doc, diags) {
-
-    // console.log(diags);
-    let ds = DecorationSet.create(doc, diags.map(diagNew));
-    return ds;
-
-}
-
 let coqDiags = new Plugin({
     props: {
         decorations(st) {
-            let diags = this.getState(st);
-            return diagDecorations(st.doc, diags);
+            return this.getState(st)
         }
     },
     state: {
-        init(_config,_instance) { return [] },
+        init(_config,_instance) { return DecorationSet.empty },
         apply(tr, cur) {
-            var m = tr.getMeta(coqDiags);
-            if (m) {
-                if(m == "clear") {
-                    return [];
+            var d = tr.getMeta(coqDiags);
+            if (d) {
+                if(d === "clear") {
+                    return DecorationSet.empty;
                 } else {
-                    return cur.concat([m])
+                    return cur.add(tr.doc, [diagNew(d)]);
                 }
             } else { 
-                let mapping = diagMap(tr);
-                return cur.map(mapping);
+                return cur.map(tr.mapping, tr.doc);
              }
         }
     }
