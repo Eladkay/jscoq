@@ -38,6 +38,7 @@ const diagField = StateField.define({
 
 export class CoqCodeMirror6 {
     view : EditorView;
+    version : number = 1;
 
     // element e
     constructor(eIds : string[]) {
@@ -72,7 +73,8 @@ export class CoqCodeMirror6 {
                       // Document changed
                       var newText = v.state.doc.toString();
                       area.value = newText;
-                      obj_ref.onChange(newText);
+                      this.version++;
+                      obj_ref.onChange(newText, this.version);
                   }})
             ];
 
@@ -87,7 +89,7 @@ export class CoqCodeMirror6 {
     }
 
     // To be overriden by the manager
-    onChange(cm) {
+    onChange(cm, version) {
         return;
     }
 
@@ -100,7 +102,9 @@ export class CoqCodeMirror6 {
         this.view.dispatch(tr);
     }
 
-    markDiagnostic(d) {
+    markDiagnostic(d, version) {
+
+        if(version < d.version) return;
 
         var from = d.range.start_pos, to = d.range.end_pos;
 

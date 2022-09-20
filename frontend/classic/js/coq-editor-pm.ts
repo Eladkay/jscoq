@@ -32,7 +32,7 @@ let coqDiags = new Plugin({
                 if(d === "clear") {
                     return DecorationSet.empty;
                 } else {
-                    return cur.add(tr.doc, [diagNew(d)]);
+                    return cur.add(tr.doc, [d]);
                 }
             } else { 
                 return cur.map(tr.mapping, tr.doc);
@@ -43,6 +43,7 @@ let coqDiags = new Plugin({
 
 export class CoqProseMirror {
     view : EditorView;
+    version : number = 1;
 
     // eId must be a textarea
     constructor(eIds) {
@@ -60,15 +61,17 @@ export class CoqProseMirror {
                 }),
                 // We update the text area
                 dispatchTransaction(tr) {
-                    const { state } = this.state.applyTransaction(tr);
-                    this.updateState(state);
+
                     // Update textarea only if content has changed
                     if (tr.docChanged) {
+                        obj_ref.version++;
                         let newDoc = CoqProseMirror.serializeDoc(tr.doc);
                         obj_ref.onChange(newDoc);
                         var newMarkdown = defaultMarkdownSerializer.serialize(tr.doc);
                         area.value = newMarkdown;
                     }
+                    const { state } = this.state.applyTransaction(tr);
+                    this.updateState(state);
                 },
             });
 
@@ -96,16 +99,16 @@ export class CoqProseMirror {
         this.view.dispatch(tr);
     }
 
-    markDiagnostic(d) {
+    markDiagnostic(d, version) {
 
         var from = d.range.start_pos, to = d.range.end_pos;
 
         console.log("mark from " + from.toString() + " to " + to.toString());
-
-        var tr = this.view.state.tr;
-        tr.setMeta(coqDiags, d);
-        this.view.dispatch(tr);
-
+        if (version === this.version) {
+            var tr = this.view.state.tr;
+            tr.setMeta(coqDiags, d);
+            this.view.dispatch(tr);
+        }
     }
 
     static process_node(acc) {
