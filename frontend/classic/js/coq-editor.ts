@@ -17,7 +17,7 @@ class ICoqEditor {
 
     getValue() { }
 
-    onChange(newContent) { }
+    onChange(newContent, version) { }
 
     clearMarks() { }
 

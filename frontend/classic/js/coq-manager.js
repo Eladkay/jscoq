@@ -27,7 +27,7 @@ import { throttle } from 'throttle-debounce';
 import { copyOptions, isMac, ArrayFuncs, arreq_deep } from '../../common/etc.js';
 
 // UI Frontend imports
-import { PackageManager } from './coq-packages.js';
+import { PackageManager } from './coq-packages';
 import { CoqLayoutClassic } from './coq-layout-classic.js';
 import { CoqContextualInfo } from './contextual-info.js';
 
@@ -37,9 +37,9 @@ import { CompanyCoq }  from './addon/company-coq.js';
 // CodeMirror
 import { CmCoqProvider } from './cm-provider';
 
-import { CoqCodeMirror5 } from './coq-editor-cm5.js';
+import { CoqCodeMirror5 } from './coq-editor-cm5';
 import { CoqCodeMirror6 } from './coq-editor-cm6';
-import { CoqProseMirror } from './coq-editor-pm.js';
+import { CoqProseMirror } from './coq-editor-pm';
 
 /**
  * Coq Document Manager, client-side.
@@ -69,7 +69,7 @@ export class CoqManager {
         // Default options
         this.options = {
             prelaunch:  false,
-            prosemirror: true,
+            frontend:   'pm',     // one of pm, cm5, cm6
             prelude:    true,
             debug:      true,
             show:       true,
@@ -98,6 +98,8 @@ export class CoqManager {
 
         // Setup the Coq editor.
         CmCoqProvider._set_keymap();
+        var frontend = { 'pm': CoqProseMirror, 'cm5': CoqCodeMirror5, 'cm6': CoqCodeMirror6 };
+        var CoqEditor = frontend[this.options.frontend];
 
         var CoqEditor = this.options.prosemirror ? CoqProseMirror : CoqCodeMirror6;
 
@@ -414,7 +416,7 @@ export class CoqManager {
             doc_opts.lib_init.push(PKG_ALIASES[pkg] || pkg);
         }
 
-        let markdown = !this.options.prosemirror;
+        let markdown = (this.options.frontend !== 'pm');
         let contents = this.editor.getValue();
         this.coq.init(init_opts, doc_opts, contents, markdown);
         // Almost done!

@@ -19,8 +19,8 @@ import '../external/CodeMirror-TeX-input/addon/hint/tex-input-hint.js';
 import './mode/coq-mode.js';
 import { CmCoqProvider } from './cm-provider.js';
 
-
 export class CoqCodeMirror5 extends CmCoqProvider {
+    version : number;
 
     // element e
     constructor(elems : string[]) {
@@ -85,3 +85,7 @@ export class CoqCodeMirror5 extends CmCoqProvider {
         };
     }
 }
+
+// Local Variables:
+// js-indent-level: 4
+// End:
