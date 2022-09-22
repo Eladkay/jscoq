@@ -101,9 +101,8 @@ export class CoqManager {
         var frontend = { 'pm': CoqProseMirror, 'cm5': CoqCodeMirror5, 'cm6': CoqCodeMirror6 };
         var CoqEditor = frontend[this.options.frontend];
 
-        var CoqEditor = this.options.prosemirror ? CoqProseMirror : CoqCodeMirror6;
+        this.editor = new CoqEditor(elems, this.options, this);
 
-        this.editor = new CoqEditor(elems);
         this.editor.onChange = throttle(200, (newText, version) => {
             this.coq.update(newText, version);
         });
@@ -133,14 +132,6 @@ export class CoqManager {
         // Setup pretty printer for feedback and goals
         this.pprint = new FormatPrettyPrint();
 
-        // Setup company-coq
-        if (this.options.editor.mode && this.options.editor.mode['company-coq']) {
-            (async () => {
-                let { CompanyCoq } = await import('./addon/company-coq.js');
-                this.company_coq = new CompanyCoq();
-            })
-        }
-
         // Keybindings setup
         // XXX: This should go in the panel init.
         document.addEventListener('keydown', evt => this.keyHandler(evt), true);
@@ -166,6 +157,7 @@ export class CoqManager {
             /* this might take some time (do async like renumber?) */
             this.editor.configure({theme: editorThemes[theme]});
         });
+
         this.layout.settings.model.company.observe(enable => {
             this.editor.configure({mode: {'company-coq': enable}});
             this.company_coq = this.contextual_info.company_coq =
@@ -298,8 +290,8 @@ export class CoqManager {
                 this.loadSymbolsFrom(`${this.options.pkg_path}/${pkg}.symb.json`);
 
             // Setup contextual info bar
-            this.contextual_info = new CoqContextualInfo($(this.layout.proof).parent(),
-                                                        this.coq, this.pprint, this.company_coq);
+            // this.contextual_info = new CoqContextualInfo($(this.layout.proof).parent(),
+            //                                             this.coq, this.pprint, this.company_coq);
 
             if (this.options.backend !== 'wa') {
                 await this.coq.when_created;

@@ -18,31 +18,29 @@ import 'codemirror/addon/dialog/dialog.css';
 import '../external/CodeMirror-TeX-input/addon/hint/tex-input-hint.js';
 import './mode/coq-mode.js';
 import { CmCoqProvider } from './cm-provider.js';
+import { CompanyCoq } from './addon/company-coq.js';
 
 export class CoqCodeMirror5 extends CmCoqProvider {
+    version : number;
+    cm : CmCoqProvider;
+    options : any;
+    manager : any;
 
-    // element e
-    constructor(elems : string[]) {
-
-        let e = document.getElementById(elems[0]);
-
-        var cmOpts =
-            { mode : { name : "coq",
-                       version: 4,
-                       singleLineStringErrors : false
-                     },
-              lineNumbers       : true,
-              indentUnit        : 2,
-              tabSize           : 2,
-              indentWithTabs    : false,
-              matchBrackets     : true,
-              styleSelectedText : true,
-              dragDrop          : false, /* handled by CoqManager */
-              keyMap            : "jscoq",
-              className         : "jscoq"
-            };
-        super(e, cmOpts, false, 0);
-        e.style.height = 'auto';
+    constructor(eIds, options, manager) {
+        CoqCodeMirror5._set_keymap();
+        let element = document.getElementById(eIds[0]);
+        super(element, options, false, 0);
+        this.version = 1;
+        this.manager = manager;
+        this.editor.on('change', (editor, change) => {
+            let txt = this.getValue();
+            this.version++;
+            this.onChange(this.editor, txt, this.version);
+        });
+        if (this.options.mode && this.options.mode['company-coq']) {
+            this.company_coq = new CompanyCoq(this.manager);
+            this.company_coq.attach(this.editor);
+        }
     }
 
     // To be overriden by the manager
