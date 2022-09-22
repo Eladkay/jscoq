@@ -84,6 +84,9 @@ export class CoqCodeMirror5 extends CmCoqProvider {
             //'Cmd-Down': false
         };
     }
+    getCursorOffset() {
+        return this.cm.editor.getDoc().indexFromPos(this.cm.editor.getCursor());
+    }    
 }
 
 // Local Variables:
