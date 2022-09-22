@@ -20,7 +20,6 @@ import './mode/coq-mode.js';
 import { CmCoqProvider } from './cm-provider.js';
 
 export class CoqCodeMirror5 extends CmCoqProvider {
-    version : number;
 
     // element e
     constructor(elems : string[]) {
@@ -57,7 +56,7 @@ export class CoqCodeMirror5 extends CmCoqProvider {
         }
     }
 
-    markDiagnostic(d) {
+    markDiagnostic(d, version) {
 
         var from = { line: d.range.start.line, ch: d.range.start.character };
         var to = { line: d.range._end.line, ch: d.range._end.character };
@@ -85,7 +84,7 @@ export class CoqCodeMirror5 extends CmCoqProvider {
         };
     }
     getCursorOffset() {
-        return this.cm.editor.getDoc().indexFromPos(this.cm.editor.getCursor());
+        return this.editor.getDoc().indexFromPos(this.editor.getCursor());
     }    
 }
 

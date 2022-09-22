@@ -29,8 +29,6 @@ import '../external/CodeMirror-TeX-input/addon/hint/tex-input-hint.js';
 import './mode/coq-mode.js';
 import { CompanyCoq }  from './addon/company-coq.js';
 
-import { Deprettify } from './deprettify';
-
 /**
  * A Coq sentence, typically ended in dot "."
  *
@@ -107,7 +105,7 @@ export class CmCoqProvider {
     autosave : any; // result of setTimeout
     autosave_interval : number;
     editor : CodeMirror.Editor;
-    onChange : (cm, change ) => void;
+    onChange : (cm, change, version) => void;
     onInvalidate : (evt : any ) => void;
     onMouseEnter : (stm, evt : any ) => void;
     onMouseLeave : (stm, evt : any ) => void;

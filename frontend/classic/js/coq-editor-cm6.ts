@@ -92,7 +92,10 @@ export class CoqCodeMirror6 {
     onChange(cm, version) {
         return;
     }
-
+    getCursorOffset() {
+        return this.view.state.selection.main.head;
+    }
+        
     getValue() {
         return this.view.state.doc.toString();
     }

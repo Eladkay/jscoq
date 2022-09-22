@@ -83,7 +83,7 @@ export class CoqProseMirror {
                     if (tr.docChanged) {
                         obj_ref.version++;
                         let newDoc = CoqProseMirror.serializeDoc(tr.doc);
-                        obj_ref.onChange(newDoc);
+                        obj_ref.onChange(newDoc, obj_ref.version);
                         var newMarkdown = defaultMarkdownSerializer.serialize(tr.doc);
                         area.value = newMarkdown;
                     }
@@ -106,10 +106,12 @@ export class CoqProseMirror {
         return CoqProseMirror.serializeDoc(this.view.state.doc);
     }
 
-    onChange(newText) {
+    onChange(newText, version) {
         return;
     }
-
+    getCursorOffset() {
+        return this.view.state.selection.head;
+    }
     clearMarks() {
         var tr = this.view.state.tr;
         tr.setMeta(coqDiags, "clear");
