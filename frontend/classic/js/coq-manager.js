@@ -69,7 +69,7 @@ export class CoqManager {
         // Default options
         this.options = {
             prelaunch:  false,
-            frontend:   'pm',     // one of pm, cm5, cm6
+            frontend:   'pm',     // 'pm' | 'cm5' | 'cm6'
             prelude:    true,
             debug:      true,
             show:       true,
@@ -79,6 +79,7 @@ export class CoqManager {
             base_path:   "./",
             node_modules_path: "./node_modules/",
             backend: "js",
+            content_type: undefined,  // 'plain' | 'markdown'  (default depends on `frontend`)
             pkg_path,
             implicit_libs: false,
             init_pkgs: ['init'],
@@ -104,8 +105,15 @@ export class CoqManager {
         this.editor = new CoqEditor(elems, this.options, this);
 
         this.editor.onChange = throttle(200, (newText, version) => {
-            this.coq.update(newText, version);
+            this.coq.update(this.preprocess(newText), version);
         });
+
+        // Setup preprocess method for markdown, if needed
+        var preprocessFunc = { 'plain': x => x, 'markdown': this.markdownPreprocess };
+        var contentType = this.options.content_type ??  /* oddly specific */
+                          (this.options.frontend === 'pm' ? 'markdown' : 'plain');
+
+        this.preprocess = preprocessFunc[contentType];
 
         /** @type {PackageManager} */
         this.packages = null;
@@ -412,9 +420,8 @@ export class CoqManager {
             doc_opts.lib_init.push(PKG_ALIASES[pkg] || pkg);
         }
 
-        let markdown = (this.options.frontend !== 'pm');
-        let contents = this.editor.getValue();
-        this.coq.init(init_opts, doc_opts, contents, markdown);
+        let content = this.preprocess(this.editor.getValue());
+        this.coq.init(init_opts, doc_opts, content);
         // Almost done!
         // Now we just wait for the `Ready` event.
     }
@@ -435,6 +442,17 @@ export class CoqManager {
         }
         return Object.entries(coq_options)
                      .map(([k, v]) => [k.split(/\s+/), makeValue(v)]);
+    }
+
+
+    /**
+     * Strip off plain text, leaving the Coq text.
+     * @param {string} text 
+     */
+    markdownPreprocess(text) {
+        let wsfill = s => s.replace(/[^\n]/g, ' ');
+        return text.split(/```([^]*?)```/g).map((x, i) => i & 1 ? x : wsfill(x))
+                   .join('');
     }
 
     interruptRequest() {
