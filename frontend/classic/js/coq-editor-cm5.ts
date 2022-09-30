@@ -1,59 +1,63 @@
-// CodeMirror implementation
-// CodeMirror
-import CodeMirror from 'codemirror';
-import 'codemirror/addon/hint/show-hint.js';
-import 'codemirror/addon/edit/matchbrackets.js';
-import 'codemirror/keymap/emacs.js';
-import 'codemirror/addon/selection/mark-selection.js';
-import 'codemirror/addon/edit/matchbrackets.js';
-import 'codemirror/addon/dialog/dialog.js';
+/**
+ * An implementation of `CoqEditor` for CodeMirror 5.
+ */
+import CodeMirror from "codemirror";
+import { ProviderContainer } from "./cm-provider-container";
+import { CompanyCoq } from "./addon/company-coq";
 
-// CM medias
-import 'codemirror/lib/codemirror.css';
-import 'codemirror/theme/blackboard.css';
-import 'codemirror/theme/darcula.css';
-import 'codemirror/addon/hint/show-hint.css';
-import 'codemirror/addon/dialog/dialog.css';
-
-import '../external/CodeMirror-TeX-input/addon/hint/tex-input-hint.js';
-import './mode/coq-mode.js';
-import { CmCoqProvider } from './cm-provider.js';
-import { CompanyCoq } from './addon/company-coq.js';
-
-export class CoqCodeMirror5 extends CmCoqProvider {
+/** Interface for CM5 */
+export class CoqCodeMirror5 extends ProviderContainer {
     version : number;
-    cm : CmCoqProvider;
-    options : any;
     manager : any;
+    company_coq : any;
 
-    constructor(eIds, options, manager) {
-        CoqCodeMirror5._set_keymap();
-        let element = document.getElementById(eIds[0]);
-        super(element, options, false, 0);
-        this.version = 1;
+    /**
+     *
+     * @param {(string | HTMLElement)[]} elementRefs
+     * @param {object} options
+     * @param {CoqManager} manager
+     */
+    constructor(elementRefs, options, manager) {
+
+        super(elementRefs, options);
+
         this.manager = manager;
-        this.editor.on('change', (editor, change) => {
+        this.version = 1;
+
+        this.onChange = () => {
             let txt = this.getValue();
             this.version++;
+<<<<<<< HEAD
             this.onChange(this.editor, txt, this.version);
         });
+=======
+            this.onChange(txt, this.version);
+        };
+
+>>>>>>> 185bba6 ([feature] Resurrected ProviderContainer.)
         if (this.options.mode && this.options.mode['company-coq']) {
             this.company_coq = new CompanyCoq(this.manager);
             this.company_coq.attach(this.editor);
         }
+
+        CoqCodeMirror5.set_keymap();
+    }
+
+    getCursorOffset() {
+        return this.snippets[0].getCursorOffset();
     }
 
     // To be overriden by the manager
     getValue() {
-        return this.editor.getValue();
+        return this.snippets.map(part => part.getValue()).join('\n');
     }
 
     clearMarks() {
-        for (let m of this.editor.getAllMarks()) {
-            m.clear();
-        }
+        for (let part of this.snippets)
+            part.retract();
     }
 
+<<<<<<< HEAD
     markDiagnostic(d, version) {
 
         var from = { line: d.range.start.line, ch: d.range.start.character };
@@ -63,6 +67,26 @@ export class CoqCodeMirror5 extends CmCoqProvider {
         var mclass = (d.severity === 1) ? 'coq-eval-failed' : 'coq-eval-ok';
 
         doc.markText(from, to, {className: mclass});
+=======
+    markDiagnostic(diag) {
+        console.log(diag);
+        // Find the part that contains the target line
+        let ln = 0, start_ln = diag.range.start.line, in_part = undefined;
+        for (let part of this.snippets) {
+            let nlines = part.editor.lineCount();
+            if (start_ln >= ln && start_ln < ln + nlines) {
+                in_part = part;
+                break;
+            }
+            else {
+                ln += nlines;
+            }
+        }
+        // Adjust the mark for the line offset
+        diag.range.start.line -= ln;
+        diag.range._end.line -= ln;
+        in_part.mark(diag);
+>>>>>>> 185bba6 ([feature] Resurrected ProviderContainer.)
     }
 
     _set_keymap() {
@@ -81,9 +105,12 @@ export class CoqCodeMirror5 extends CmCoqProvider {
             //'Cmd-Down': false
         };
     }
+<<<<<<< HEAD
     getCursorOffset() {
         return this.editor.getDoc().indexFromPos(this.editor.getCursor());
     }    
+=======
+>>>>>>> 185bba6 ([feature] Resurrected ProviderContainer.)
 }
 
 // Local Variables:

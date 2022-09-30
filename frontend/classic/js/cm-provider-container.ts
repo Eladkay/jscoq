@@ -41,6 +41,7 @@ export class ProviderContainer {
         this.snippets = [];
 
         // Event handlers (to be overridden by CoqManager)
+        this.onChange = () => {};
         this.onInvalidate = (mark) => {};
         this.onMouseEnter = (stm, ev) => {};
         this.onMouseLeave = (stm, ev) => {};
@@ -89,6 +90,7 @@ export class ProviderContainer {
                 cm.editor.on('focus', ev => { this.currentFocus = cm; });
 
                 // Track invalidate
+                cm.onChange     = (text, v) => { this.onChange(text,v); };
                 cm.onInvalidate = (stm)     => { this.onInvalidate(stm); };
                 cm.onMouseEnter = (stm, ev) => { this.onMouseEnter(stm, ev); };
                 cm.onMouseLeave = (stm, ev) => { this.onMouseLeave(stm, ev); };
@@ -114,7 +116,7 @@ export class ProviderContainer {
     /**
      * Find elements in the page
      *
-     * @param {*} elementRefs
+     * @param {(string | HTMLElement)[]} elementRefs
      * @return {HTMLElement[]}
      * @memberof ProviderContainer
      */
@@ -155,50 +157,6 @@ export class ProviderContainer {
     configure(options) {
         for (let snippet of this.snippets)
             snippet.configure(options);
-    }
-
-    // Get the next candidate and mark it.
-    getNext(prev, until) {
-
-        // If we have no previous element start with the first
-        // snippet, else continue with the current one.
-        var spr = prev ? prev.sp : this.snippets[0];
-
-        if (until && this.snippets.indexOf(spr) > this.snippets.indexOf(until.sp))
-            return null;
-
-        var next = spr.getNext(prev, (until && until.sp === spr) ? until.pos : null);
-
-        // We got a snippet!
-        if (next) {
-            next.sp = spr;
-            return next;
-        } else if (until && until.sp === spr) {
-            return null;
-        } else {
-            // Try the next snippet.
-            var idx = this.snippets.indexOf(spr);
-            while (idx < this.snippets.length - 1) {
-                spr  = this.snippets[idx+1];
-                next = spr.getNext(null);
-                if (next) {
-                    next.sp = spr;
-                    return next;
-                } else {
-                    idx = this.snippets.indexOf(spr);
-                }
-            } // while
-            // No next snippet :( !
-            return null;
-        }
-    }
-
-    mark(stm, mark, loc_focus) {
-        stm.sp.mark(stm, mark, loc_focus);
-    }
-
-    highlight(stm, flag) {
-        stm.sp.highlight(stm, flag);
     }
 
     retract() {

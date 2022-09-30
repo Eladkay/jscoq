@@ -69,7 +69,7 @@ export class CoqManager {
         // Default options
         this.options = {
             prelaunch:  false,
-            frontend:   'pm',     // 'pm' | 'cm5' | 'cm6'
+            frontend:   'cm5',     // 'pm' | 'cm5' | 'cm6'
             prelude:    true,
             debug:      true,
             show:       true,
@@ -79,7 +79,7 @@ export class CoqManager {
             base_path:   "./",
             node_modules_path: "./node_modules/",
             backend: "js",
-            content_type: undefined,  // 'plain' | 'markdown'  (default depends on `frontend`)
+            content_type: 'plain',  // 'plain' | 'markdown'
             pkg_path,
             implicit_libs: false,
             init_pkgs: ['init'],
@@ -102,6 +102,9 @@ export class CoqManager {
         var frontend = { 'pm': CoqProseMirror, 'cm5': CoqCodeMirror5, 'cm6': CoqCodeMirror6 };
         var CoqEditor = frontend[this.options.frontend];
 
+        if (!CoqEditor)
+            throw new Error(`invalid frontend specification: '${this.options.frontend}'`);
+
         this.editor = new CoqEditor(elems, this.options, this);
 
         this.editor.onChange = throttle(200, (newText, version) => {
@@ -110,10 +113,11 @@ export class CoqManager {
 
         // Setup preprocess method for markdown, if needed
         var preprocessFunc = { 'plain': x => x, 'markdown': this.markdownPreprocess };
-        var contentType = this.options.content_type ??  /* oddly specific */
-                          (this.options.frontend === 'pm' ? 'markdown' : 'plain');
 
-        this.preprocess = preprocessFunc[contentType];
+        this.preprocess = preprocessFunc[this.options.content_type];
+
+        if (!this.preprocess)
+            throw new Error(`invalid content type: '${this.options.content_type}'`);
 
         /** @type {PackageManager} */
         this.packages = null;
@@ -451,7 +455,8 @@ export class CoqManager {
      */
     markdownPreprocess(text) {
         let wsfill = s => s.replace(/[^\n]/g, ' ');
-        return text.split(/```([^]*?)```/g).map((x, i) => i & 1 ? x : wsfill(x))
+        return text.split(/```([^]*?)```/g)
+                   .map((x, i) => i & 1 ? `   ${x}   ` : wsfill(x))
                    .join('');
     }
 

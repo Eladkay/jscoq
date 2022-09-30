@@ -43,22 +43,6 @@ export class CoqCodeMirror6 {
     // element e
     constructor(eIds : string[]) {
 
-        var cmOpts =
-            { mode : { name : "coq",
-                       version: 4,
-                       singleLineStringErrors : false
-                     },
-              lineNumbers       : true,
-              indentUnit        : 2,
-              tabSize           : 2,
-              indentWithTabs    : false,
-              matchBrackets     : true,
-              styleSelectedText : true,
-              dragDrop          : false, /* handled by CoqManager */
-              keyMap            : "jscoq",
-              className         : "jscoq"
-            };
-
         let { container, area } = editorAppend(eIds[0]);
 
         var obj_ref = this;

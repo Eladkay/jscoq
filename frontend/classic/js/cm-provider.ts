@@ -240,7 +240,24 @@ export class CmCoqProvider {
     getText() {
         return this.editor.getValue();
     }
+    // ----------------------------------
+    // CoqEditor interface implementation
 
+    getValue() {
+         return this.editor.getValue();
+     }
+     
+    getCursorOffset() {
+        return this.editor.getDoc().indexFromPos(this.editor.getCursor());
+    }
+
+    // ---------------------------------
+
+    getLength() {
+        /** @todo optimize */
+        return this.editor.getValue().length;
+    }
+    
     trackLineCount() {
         this.lineCount = this.editor.lineCount();
         this.editor.on('change', (ev) => {
