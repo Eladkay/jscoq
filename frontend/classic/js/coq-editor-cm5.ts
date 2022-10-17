@@ -57,18 +57,7 @@ export class CoqCodeMirror5 extends ProviderContainer {
             part.retract();
     }
 
-<<<<<<< HEAD
-    markDiagnostic(d, version) {
-
-        var from = { line: d.range.start.line, ch: d.range.start.character };
-        var to = { line: d.range._end.line, ch: d.range._end.character };
-
-        var doc = this.editor.getDoc();
-        var mclass = (d.severity === 1) ? 'coq-eval-failed' : 'coq-eval-ok';
-
-        doc.markText(from, to, {className: mclass});
-=======
-    markDiagnostic(diag) {
+    markDiagnostic(diag, version) {
         console.log(diag);
         // Find the part that contains the target line
         let ln = 0, start_ln = diag.range.start.line, in_part = undefined;
@@ -86,7 +75,7 @@ export class CoqCodeMirror5 extends ProviderContainer {
         diag.range.start.line -= ln;
         diag.range._end.line -= ln;
         in_part.mark(diag);
->>>>>>> 185bba6 ([feature] Resurrected ProviderContainer.)
+
     }
 
     _set_keymap() {

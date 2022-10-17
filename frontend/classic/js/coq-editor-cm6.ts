@@ -2,6 +2,8 @@
 import { EditorState, RangeSet, Facet, StateEffect, StateField } from "@codemirror/state";
 import { EditorView, lineNumbers, Decoration, ViewPlugin } from "@codemirror/view";
 
+// import { Diagnostic } from '../../../backend/coq-worker';
+
 // import './mode/coq-mode.js';
 
 import { editorAppend } from "./coq-editor";
@@ -89,11 +91,11 @@ export class CoqCodeMirror6 {
         this.view.dispatch(tr);
     }
 
-    markDiagnostic(d, version) {
+    markDiagnostic(d : Diagnostic, version) {
 
         if(version < d.version) return;
 
-        var from = d.range.start_pos, to = d.range.end_pos;
+        var from = d.range.start.offset, to = d.range._end.offset;
 
         var mclass = (d.severity === 1) ? 'coq-eval-failed' : 'coq-eval-ok';
         const diagMark = Decoration.mark( { class: mclass } );
