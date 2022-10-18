@@ -168,9 +168,6 @@ export class CoqManager {
         this.layout.settings.model.theme.observe(theme => {
             /* this might take some time (do async like renumber?) */
             this.editor.configure({theme: editorThemes[theme]});
-        });
-
-        this.layout.settings.model.company.observe(enable => {
             this.editor.configure({mode: {'company-coq': enable}});
             this.company_coq = this.contextual_info.company_coq =
                 enable ? new CompanyCoq() : undefined;
@@ -343,6 +340,10 @@ export class CoqManager {
 
         console.log("Diags received: " + diags.length.toString());
         for (let d of diags) {
+            for (let extra of d.extra) {
+                if (extra[0] === 'FailedRequire')
+                    this.handleRequires(extra);
+            }
             // d_str = JSON.stringify(d);
             // this.layout.log("Diag", 'Info');
             // this.layout.log(d.message, 'Info');
@@ -425,7 +426,8 @@ export class CoqManager {
         }
 
         let content = this.preprocess(this.editor.getValue());
-        this.coq.init(init_opts, doc_opts, content);
+        this.coq.init(init_opts)
+        this.coq.newDoc(doc_opts, content);
         // Almost done!
         // Now we just wait for the `Ready` event.
     }
@@ -478,6 +480,42 @@ export class CoqManager {
                 "(Serving from local file;\n" +
                 "has <i>--allow-file-access-from-files</i> been set?)"), 'Info');
         }
+    }
+
+    /**
+     * 
+     * @param {['FailedRequire', {prefix: {v: any[]}, refs: {v: any[]}[]}]} info 
+     */
+    handleRequires(info) {
+        let op = qid => CoqIdentifier.ofQualid(qid).toStrings(),
+            prefix = info[1].prefix ? op(info[1].prefix.v) : [],
+            pkgDeps = new Set();
+
+        for (let suffix of info[1].refs.map(r => op(r.v))) {
+            for (let dep of this.packages.index.findPackageDeps(prefix, suffix))
+                pkgDeps.add(dep);
+        }
+
+        for (let d of this.packages.loaded_pkgs) pkgDeps.delete(d);
+
+        if (pkgDeps.size > 0) this.handleMissingDeps([...pkgDeps]);
+    }
+
+    /**
+     * Loads some packages and re-checks the document.
+     * @param {string[]} pkgs packages to load
+     */
+    handleMissingDeps(pkgs) {
+        this.disable();
+        this.packages.expand();
+        this.packages.loadDeps(pkgs).then(pkgs => {
+            this.layout.systemNotification(
+                `===> Loaded packages [${pkgs.map(p => p.name).join(', ')}]`);
+            this.enable();
+            setTimeout(() => this.packages.collapse(), 500);
+            /** @todo instead of re-init, just update loadpath and re-check */
+            this.coqInit();
+        });
     }
 
     /**
