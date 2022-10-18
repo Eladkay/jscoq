@@ -8,7 +8,6 @@ import { CompanyCoq } from "./addon/company-coq";
 /** Interface for CM5 */
 export class CoqCodeMirror5 extends ProviderContainer {
     version : number;
-    manager : any;
     company_coq : any;
 
     /**
@@ -19,7 +18,7 @@ export class CoqCodeMirror5 extends ProviderContainer {
      */
     constructor(elementRefs, options, manager) {
 
-        super(elementRefs, options);
+        super(elementRefs, options, manager);
 
         this.manager = manager;
         this.version = 1;
@@ -27,20 +26,14 @@ export class CoqCodeMirror5 extends ProviderContainer {
         this.onChange = () => {
             let txt = this.getValue();
             this.version++;
-<<<<<<< HEAD
             this.onChange(this.editor, txt, this.version);
         });
-=======
-            this.onChange(txt, this.version);
-        };
-
->>>>>>> 185bba6 ([feature] Resurrected ProviderContainer.)
         if (this.options.mode && this.options.mode['company-coq']) {
             this.company_coq = new CompanyCoq(this.manager);
             this.company_coq.attach(this.editor);
         }
 
-        CoqCodeMirror5.set_keymap();
+        CoqCodeMirror5._set_keymap();
     }
 
     getCursorOffset() {
@@ -78,7 +71,7 @@ export class CoqCodeMirror5 extends ProviderContainer {
 
     }
 
-    _set_keymap() {
+    static _set_keymap() {
 
         CodeMirror.keyMap['jscoq'] = {
             'Tab': 'indentMore',
@@ -94,12 +87,6 @@ export class CoqCodeMirror5 extends ProviderContainer {
             //'Cmd-Down': false
         };
     }
-<<<<<<< HEAD
-    getCursorOffset() {
-        return this.editor.getDoc().indexFromPos(this.editor.getCursor());
-    }    
-=======
->>>>>>> 185bba6 ([feature] Resurrected ProviderContainer.)
 }
 
 // Local Variables:
