@@ -16,6 +16,11 @@
 
 // Backend imports
 import { Future, CoqWorker, CoqSubprocessAdapter } from '../../../backend';
+
+/**
+ * @typedef { import("../../../dist/backend").Diagnostic } Diagnostic
+ * @typedef { import("../../../dist/backend").Goals } Goals
+ */
 import { CoqIdentifier } from '../../../backend/coq-identifier.js';
 
 // UI imports
@@ -334,6 +339,10 @@ export class CoqManager {
     }
 
     // Coq document diagnostics.
+    /**
+     * @param { Diagnostic[] } diags
+     * @param { number } version
+     */
     async coqNotification(diags, version) {
 
         this.editor.clearMarks();
@@ -436,6 +445,7 @@ export class CoqManager {
      * Creates a JSON-able version of the startup Coq options.
      * E.g. {'Default Timeout': 10}  -->  [[['Default', 'Timeout'], ['IntValue', 10]]]
      * @param {object} coq_options option name to value dictionary
+     * @return { [any[], any[]][] }
      */
     _parseOptions(coq_options) {
         function makeValue(value) {
@@ -560,7 +570,10 @@ export class CoqManager {
         if (resp[1])
             this.updateGoals(resp[1]);
     }
-
+    /**
+     * Goals update
+     * @param { Goals } goals
+     */
     updateGoals(goals) {
         var hgoals = this.goals2DOM(goals);
 
