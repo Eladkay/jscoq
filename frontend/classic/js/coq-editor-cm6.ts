@@ -95,7 +95,7 @@ export class CoqCodeMirror6 {
 
         if(version < d.version) return;
 
-        var from = d.range.start.offset, to = d.range._end.offset;
+        var from = d.range.start.offset, to = d.range.end_.offset;
 
         var mclass = (d.severity === 1) ? 'coq-eval-failed' : 'coq-eval-ok';
         const diagMark = Decoration.mark( { class: mclass } );
@@ -105,7 +105,7 @@ export class CoqCodeMirror6 {
 
         // Debug code.
         var from_ = { line: d.range.start.line, ch: d.range.start.character };
-        var to_ = { line: d.range._end.line, ch: d.range._end.character };
+        var to_ = { line: d.range.end_.line, ch: d.range.end_.character };
 
         console.log(`mark from (${from_.line},${from_.ch}) to (${to_.line},${to_.ch}) class: ${mclass}`);
         if (d.extra) console.log('extra: ', d.extra);

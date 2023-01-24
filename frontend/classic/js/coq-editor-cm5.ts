@@ -66,7 +66,7 @@ export class CoqCodeMirror5 extends ProviderContainer {
         }
         // Adjust the mark for the line offset
         diag.range.start.line -= ln;
-        diag.range._end.line -= ln;
+        diag.range.end_.line -= ln;
         in_part.mark(diag);
 
     }

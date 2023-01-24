@@ -8,6 +8,8 @@ import { CoqManager } from './coq-manager';
 import localforage from "localforage";
 import $ from 'jquery';
 
+import { Diagnostic } from '../../../backend/coq-worker.js';
+
 import { Deprettify } from './deprettify';
 
 // CM imports
@@ -373,9 +375,8 @@ export class CmCoqProvider {
     }
 
     /**
-     * @param { any } diag
      */
-    mark(diag) {
+    mark(diag : Diagnostic) {
 
         var tr_loc = ({character, line}) => { return {line: line, ch: character } };
 
@@ -383,7 +384,7 @@ export class CmCoqProvider {
                         (diag.severity === 1) ? 'coq-eval-failed' : 'coq-eval-ok';
 
         var doc = this.editor.getDoc();
-        let start = tr_loc(diag.range.start), end = tr_loc(diag.range._end);
+        let start = tr_loc(diag.range.start), end = tr_loc(diag.range.end_);
 
         var mark =
             doc.markText(start, end,
