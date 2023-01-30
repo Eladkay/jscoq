@@ -29,13 +29,8 @@ import InlineActionSwitch from '@curvenote/editor/dist/src/components/InlineActi
 
 import rootReducer from './cn-reducer';
 import middleware from './cn-middleware';
-
-// import { InlineActionSwitch } from '@curvenote/editor';
-
+import { ICoqEditor } from './coq-editor.js';
 import { Sidenote, AnchorBase } from 'sidenotes';
-
-// import { editorAppend } from './coq-editor.js';
-import { ICoqEditor } from './coq-editor-cm6.js';
 
 import { createTheme, Button } from '@material-ui/core';
 

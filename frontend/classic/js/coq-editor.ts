@@ -1,8 +1,8 @@
 /* jsCoq
  *
  * Copyright (C) 2016-2019 Emilio J. Gallego Arias, Mines ParisTech, Paris.
- * Copyright (C) 2018-2022 Shachar Itzhaky, Technion - Israel Institute of Technology, Haifa
- * Copyright (C) 2019-2022 Emilio J. Gallego Arias, Inria, Paris
+ * Copyright (C) 2018-2023 Shachar Itzhaky, Technion - Israel Institute of Technology, Haifa
+ * Copyright (C) 2019-2023 Emilio J. Gallego Arias, Inria, Paris
  */
 import { Diagnostic } from "../../../backend";
 
@@ -20,25 +20,20 @@ export interface ICoqEditor {
 }
 
 export interface ICoqEditorConstructor {
-    new(elems : string, 
+    new(elems : string,
          onChange : (newContent : string, version : number) => void,
          diagsSource : EventTarget) : ICoqEditor;
     }
 /**
  * Takes a textArea and will create an empty div to attach an editor to.
- * @param {(string | HTMLElement)} eId 
- * @returns {{container: HTMLDivElement, area: HTMLTextAreaElement}}
  */
-export function editorAppend(eId) {
+export function editorAppend(eId) : { container : HTMLDivElement, area : HTMLTextAreaElement } {
 
-<<<<<<< HEAD
     var area = document.getElementById(eId) as HTMLTextAreaElement;
-=======
-    var area = /** @type {HTMLTextAreaElement} */ 
-        (eId instanceof HTMLElement ? eId : document.getElementById(eId));
-    if (area.tagName !== 'TEXTAREA')
+    var area = (eId instanceof HTMLElement ? eId : document.getElementById(eId));
+
+    if (! (area instanceof HTMLTextAreaElement))
         throw new Error(`not implemented: '${eId}' must be a textarea`);
->>>>>>> 185bba6 ([feature] Resurrected ProviderContainer.)
 
     area.style.display = 'none';
 

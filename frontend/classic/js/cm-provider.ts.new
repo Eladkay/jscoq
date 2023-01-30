@@ -1,80 +1,3 @@
-// Misc imports
-import { copyOptions } from '../../common/etc.js';
-import { JsCoq } from './index.js';
-
-import { CoqManager } from './coq-manager';
-
-// Misc imports
-import localforage from "localforage";
-import $ from 'jquery';
-
-import { Diagnostic } from '../../../backend/coq-worker.js';
-
-import { Deprettify } from './deprettify';
-
-// CM imports
-import CodeMirror from "codemirror";
-
-import 'codemirror/addon/hint/show-hint.js';
-import 'codemirror/addon/edit/matchbrackets.js';
-import 'codemirror/keymap/emacs.js';
-import 'codemirror/addon/selection/mark-selection.js';
-import 'codemirror/addon/edit/matchbrackets.js';
-import 'codemirror/addon/dialog/dialog.js';
-
-// CM medias
-import 'codemirror/lib/codemirror.css';
-import 'codemirror/theme/blackboard.css';
-import 'codemirror/theme/darcula.css';
-import 'codemirror/addon/hint/show-hint.css';
-import 'codemirror/addon/dialog/dialog.css';
-
-import '../external/CodeMirror-TeX-input/addon/hint/tex-input-hint.js';
-import './mode/coq-mode.js';
-import { CompanyCoq }  from './addon/company-coq.js';
-
-/**
- * A Coq sentence, typically ended in dot "."
- *
- * @class CmSentence
- */
-class CmSentence {
-    start : CodeMirror.Position;
-    end : CodeMirror.Position;
-    text : string;
-    mark ?: number;
-    flags : {is_comment : boolean, is_hidden : boolean};
-    feedback : number[];
-    action : number;
-    coq_sid : string;
-
-    /**
-     * Creates an instance of CmSentence.
-     * @param {CodeMirror.Position} start
-     * @param {CodeMirror.Position} end
-     * @param {string} text
-     * @param {object} flags
-     * @memberof CmSentence
-     */
-    constructor(start, end, text, flags) {
-        // start, end: {line: number, ch: number}
-        // flags: {is_comment: bool, is_hidden: bool}
-        this.start = start;
-        this.end   = end;
-        this.text  = text;
-        /**
-         * @type {undefined}
-         */
-        this.mark  = undefined;
-        this.flags = flags || {};
-        this.feedback = [];
-        /**
-         * @type {undefined}
-         */
-        this.action = undefined;
-    }
-} 
-
 // Extensions to TS typing in npm
 declare module "codemirror" {
     var keyMap : any;
@@ -109,7 +32,7 @@ export class CmCoqProvider {
     autosave : any; // result of setTimeout
     autosave_interval : number;
     editor : CodeMirror.Editor;
-    onChange : (cm, change, version) => void;
+    onChange : (cm, change ) => void;
     onInvalidate : (evt : any ) => void;
     onMouseEnter : (stm, evt : any ) => void;
     onMouseLeave : (stm, evt : any ) => void;
@@ -122,16 +45,9 @@ export class CmCoqProvider {
     hover : any[];
     company_coq ?: CompanyCoq;
     lineCount : number;
-    options : any;
-    manager : CoqManager;
 
     /**
      * Creates an instance of CmCoqProvider.
-     * @param {*} element
-     * @param {*} options
-     * @param {*} replace
-     * @param {number} idx
-     * @memberof CmCoqProvider
      */
     constructor(element, options, replace, idx, manager) {
 
@@ -153,7 +69,6 @@ export class CmCoqProvider {
 
         if (options)
             copyOptions(options, cmOpts);
-        this.options = options;
 
         var makeHidden = $(element).is(':hidden') ||
             /* corner case: a div with a single hidden child is considered hidden */
@@ -180,6 +95,7 @@ export class CmCoqProvider {
         if (this.filename) { this.openLocal(this.filename); this.startAutoSave(); }
 
         // Event handlers (to be overridden by ProviderContainer)
+        this.onChange = /** @type {() => void} */ (() => {});
         this.onInvalidate = (mark) => {};
         this.onMouseEnter = (stm, ev) => {};
         this.onMouseLeave = (stm, ev) => {};
@@ -189,8 +105,9 @@ export class CmCoqProvider {
         this.onAction = (action) => {};
 
         this.editor.on('beforeChange', (cm, evt) => this.onCMChange(cm, evt) );
+        this.editor.on('change', (cm, change) => this.onChange(cm, change));
 
-        this.editor.on('cursorActivity', (/** @type {{ operation: (arg0: () => void) => any; }} */ cm) => 
+        this.editor.on('cursorActivity', (/** @type {{ operation: (arg0: () => void) => any; }} */ cm) =>
             cm.operation(() => this._adjustWidgetsInSelection()));
 
         this.trackLineCount();
@@ -211,14 +128,15 @@ export class CmCoqProvider {
         this.hover = [];
 
         // Handle hint events
-        this.editor.on('hintHover',     (completion)     => this.onTipHover([completion], false));
+        this.editor.on('hintHover',     (completion, c)     => this.onTipHover([completion], false));
         this.editor.on('hintZoom',      (completion)     => this.onTipHover([completion], true));
-        this.editor.on('hintEnter',     (tok, entries)   => this.onTipHover(entries, false));
-        this.editor.on('hintOut',       (cm)             => this.onTipOut(cm));
+        this.editor.on('hintEnter',     (tok, entries) => this.onTipHover(entries, false));
+        this.editor.on('hintOut',       (e)             => this.onTipOut(e));
+
         this.editor.on('endCompletion', (cm)             => this.onTipOut(cm));
 
-        if (this.options?.mode?.['company-coq']) {
-            this.company_coq = new CompanyCoq(this.manager);
+        if (options?.mode?.['company-coq']) {
+            this.company_coq = new CompanyCoq(manager);
             this.company_coq.attach(this.editor);
         }
     }
@@ -229,6 +147,7 @@ export class CmCoqProvider {
      * @param {HTMLElement} element
      * @param {CodeMirror.EditorConfiguration | undefined} opts
      * @param {any} replace
+     * @return {CodeMirror.Editor}
      */
     createEditor(element, opts, replace) {
         var text = replace && $(element).text(),
@@ -250,15 +169,12 @@ export class CmCoqProvider {
         CompanyCoq.configure(this.editor, options);
     }
 
-    getText() {
-        return this.editor.getValue();
-    }
     // ----------------------------------
     // CoqEditor interface implementation
 
     getValue() {
-         return this.editor.getValue();
-     }
+        return this.editor.getValue();
+    }
 
     getCursorOffset() {
         return this.editor.getDoc().indexFromPos(this.editor.getCursor());
@@ -270,7 +186,7 @@ export class CmCoqProvider {
         /** @todo optimize */
         return this.editor.getValue().length;
     }
-    
+
     trackLineCount() {
         this.lineCount = this.editor.lineCount();
         this.editor.on('change', (ev) => {
@@ -347,7 +263,7 @@ export class CmCoqProvider {
             /* Update the spans directly to avoid having to destroy and     */
             /* re-create the spans.                                         */
             /* (re-creating elements under cursor messes with mouse events) */
-            if (flag) spans.addClass(c); 
+            if (flag) spans.addClass(c);
             else      spans.removeClass(c);
             stm.mark.className =
                 stm.mark.className.replace(/( coq-highlight)?$/, flag ? ' coq-highlight' : '');
@@ -370,17 +286,19 @@ export class CmCoqProvider {
      */
     retract() {
         for (let mark of this.editor.getAllMarks()) {
-            mark.clear();
+            if (mark.diag)
+                mark.clear();
         }
     }
 
     /**
+     * @param { any } diag
      */
-    mark(diag : Diagnostic) {
+    mark(diag) {
 
         var tr_loc = ({character, line}) => { return {line: line, ch: character } };
 
-        var className = diag.extra ? 'coq-eval-pending' :
+        var className = diag.inProgress ? 'coq-eval-pending' :
                         (diag.severity === 1) ? 'coq-eval-failed' : 'coq-eval-ok';
 
         var doc = this.editor.getDoc();
@@ -390,8 +308,9 @@ export class CmCoqProvider {
             doc.markText(start, end,
              {className: className, attributes: {'data-coq-range': JSON.stringify(diag.range)}});
 
-        this._markWidgetsAsWell(start, end, mark);
+        mark.diag = diag;
 
+        this._markWidgetsAsWell(start, end, mark);
     }
 
     /**
@@ -403,7 +322,7 @@ export class CmCoqProvider {
         var doc = this.editor.getDoc(),
             {start, end} = pos;
 
-        var mark = 
+        var mark =
             doc.markText(start, end, {className: className});
 
         this._markWidgetsAsWell(start, end, mark);
@@ -433,11 +352,11 @@ export class CmCoqProvider {
 
     /**
      * Hack to apply MarkedSpan CSS class formatting and attributes to widgets
-     * within mark boundaries as well. 
+     * within mark boundaries as well.
      * (This is not handled by the native CodeMirror#markText.)
      * @param {any} start
      * @param {any} end
-     * @param {{ className: string; attributes: {}; }} mark
+     * @param {CodeMirror.TextMarker<CodeMirror.MarkerRange>} mark
      */
     _markWidgetsAsWell(start, end, mark) {
         var classNames = mark.className.split(/ +/);
@@ -453,11 +372,11 @@ export class CmCoqProvider {
 
     /**
      * Hack contd: negates effects of _markWidgetsAsWell when mark is cleared.
-     * @param {any} start
-     * @param {any} end
+     * @param {CodeMirror.Position} from
+     * @param {CodeMirror.Position} to
      */
     _unmarkWidgets(start, end) {
-        for (let w of this.editor.findMarks(start, end, (/** @type {{ widgetNode: any; }} */ x) => x.widgetNode)) {
+        for (let w of this.editor.findMarks(start, end, (x) => x.widgetNode)) {
             for (let cn of [...w.widgetNode.classList]) {
                 if (/^coq-/.exec(cn))
                     w.widgetNode.classList.remove(cn);
@@ -483,7 +402,7 @@ export class CmCoqProvider {
 
         // Locate selection mark and adjust widgets contain therein
         var selmark = editor.findMarksAt(editor.getCursor())
-            .filter((/** @type {{ className: string; }} */ m) => m.className == sel_className)[0], selmark_at;
+            .filter((m) => m.className == sel_className)[0], selmark_at;
 
         if (selmark && (selmark_at = selmark.find()))
             this._markWidgetsAsWell(selmark_at.from, selmark_at.to, selmark);
@@ -603,14 +522,14 @@ export class CmCoqProvider {
             this.onMouseEnter(mark.stm, evt);
             if (!this._key_bound) {
                 this._key_bound = true;
-                $(document).on('keydown keyup', this._keyHandler);
+                $(document).on('keydown keyup', null, null, this._keyHandler);
             }
         }
         else {
             if (this.hover[0])
                 this.onMouseLeave(this.hover[0].stm, evt);
             this.hover = [];
-            $(document).off('keydown keyup', this._keyHandler);
+            $(document).off('keydown keyup', null, this._keyHandler);
             this._key_bound = false;
         }
     }
@@ -721,7 +640,7 @@ export class CmCoqProvider {
     /**
      * @param {undefined} [filename]
      */
-    saveLocal(filename?) {
+    saveLocal(filename ?: string) {
         if (filename) this.filename = filename;
 
         if (this.filename) {
@@ -736,7 +655,7 @@ export class CmCoqProvider {
             this.editor.on('change', () => { this.dirty = true; });
             this.autosave = setInterval(() => { if (this.dirty) this.saveLocal(); },
                 this.autosave_interval);
-            window.addEventListener('beforeunload', 
+            window.addEventListener('beforeunload',
                 () => { clearInterval(this.autosave);
                         if (this.dirty) this.saveLocal(); });
         }
@@ -754,7 +673,7 @@ export class CmCoqProvider {
 
     openLocalDialog() {
         var span = this._makeFileDialog("Open file: "),
-            a = this._makeDialogLink('From disk...', 
+            a = this._makeDialogLink('From disk...',
                 () => this.openFileDialog());
 
         span.append(a);
@@ -763,7 +682,7 @@ export class CmCoqProvider {
     }
 
     openFileDialog() {
-        var input = $('<input>').attr('type', 'file') as JQuery<HTMLInputElement>;
+        var input = ($('<input>').attr('type', 'file') as JQuery<HTMLInputElement>);
         input.on('change', () => {
             if (input[0].files[0]) this.openFile(input[0].files[0]);
         });
@@ -774,14 +693,14 @@ export class CmCoqProvider {
         var span = this._makeFileDialog("Save file: "),
             a1 = this._makeDialogLink('To disk...', () => this.saveToFile()),
             share = $('<span>').addClass('dialog-share')
-                    .append($('<img>').attr('src', JsCoq.base_path + 'frontend/classic/images/share.svg')),
+                    .append($('<img>').attr('src', JsCoq.base_path + 'ui-images/share.svg')),
             a2 = this._makeDialogLink('Hastebin', () => this.shareHastebin()),
             a3 = betaOnly(() =>
                  this._makeDialogLink('P2P', () => this.shareP2P()));
 
         span.append(a1, share.append(a2, a3));
 
-        this.editor.openDialog(span[0], (sel) => this.saveLocal(sel), 
+        this.editor.openDialog(span[0], (sel) => this.saveLocal(sel),
                                {value: this.filename});
     }
 
@@ -837,7 +756,7 @@ export class CmCoqProvider {
     _setupTabCompletion(input, list) {
         input.keydown((/** @type {{ key: string; preventDefault: () => void; stopPropagation: () => void; }} */ ev) => { if (ev.key === 'Tab') {
             this._complete(input, list);
-            ev.preventDefault(); ev.stopPropagation(); } 
+            ev.preventDefault(); ev.stopPropagation(); }
         });
     }
 
@@ -856,22 +775,48 @@ export class CmCoqProvider {
             }
         }
     }
+}
 
-    static _set_keymap() {
 
-        CodeMirror.keyMap['jscoq'] = {
-            'Tab': 'indentMore',
-            'Shift-Tab': 'indentLess',
-            'Ctrl-Space': 'autocomplete',
-            fallthrough: ["default"]
-        };
+/**
+ * A Coq sentence, typically ended in dot "."
+ *
+ * @class CmSentence
+ */
+ class CmSentence {
+    start : CodeMirror.Position;
+    end : CodeMirror.Position;
+    text : string;
+    mark ?: number;
+    flags : {is_comment : boolean, is_hidden : boolean};
+    feedback : number[];
+    action : number;
+    coq_sid : string;
 
-        CodeMirror.keyMap['jscoq-snippet'] = {
-            PageUp: false,
-            PageDown: false,
-            //'Cmd-Up': false,   /** @todo this does not work? */
-            //'Cmd-Down': false
-        };
+    /**
+     * Creates an instance of CmSentence.
+     * @param {CodeMirror.Position} start
+     * @param {CodeMirror.Position} end
+     * @param {string} text
+     * @param {object} flags
+     * @memberof CmSentence
+     */
+    constructor(start, end, text, flags) {
+        // start, end: {line: number, ch: number}
+        // flags: {is_comment: bool, is_hidden: bool}
+        this.start = start;
+        this.end   = end;
+        this.text  = text;
+        /**
+         * @type {undefined}
+         */
+        this.mark  = undefined;
+        this.flags = flags || {};
+        this.feedback = [];
+        /**
+         * @type {undefined}
+         */
+        this.action = undefined;
     }
 }
 
@@ -893,13 +838,9 @@ function betaOnly(thing) {
 function pageUpDownOverride(element) {
     var scrollable = (document.querySelector('#page') as HTMLDivElement);
     if (scrollable)
-        element.addEventListener('keydown', (ev) => {
+        element.addEventListener('keydown', (/** @type {{ key: string; stopPropagation: () => void; }} */ ev) => {
             if (ev.key === 'PageDown' || ev.key === 'PageUp') {
                 ev.stopPropagation(); scrollable.focus();
             }
         }, {capture: true});
 }
-
-// Local Variables:
-// js-indent-level: 4
-// End:

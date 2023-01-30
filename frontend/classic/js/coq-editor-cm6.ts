@@ -3,14 +3,12 @@ import { EditorState, RangeSet, Facet, StateEffect, StateField } from "@codemirr
 import { EditorView, lineNumbers, Decoration, ViewPlugin } from "@codemirror/view";
 
 import { Diagnostic } from '../../../backend/coq-worker';
+import { editorAppend } from './coq-editor';
 
 // import './mode/coq-mode.js';
 
-import { editorAppend } from "./coq-editor";
-
 const clearDiag = StateEffect.define<{}>({});
-
-const addDiag = StateEffect.define<{from : number, to: number, d : Decoration}>(
+const addDiag = StateEffect.define<{ from: number, to : number, d : Decoration }>(
     { map: ({from, to, d}, change) => ({from: change.mapPos(from), to: change.mapPos(to), d}) });
 
 const diagField = StateField.define({
@@ -38,12 +36,18 @@ const diagField = StateField.define({
   provide: f => EditorView.decorations.from(f)
 })
 
+/** Interface for CM5
+ * @implements ICoqEditor
+ */
 export class CoqCodeMirror6 {
-    view : EditorView;
-    version : number = 1;
+    private version : number = 1;
+    private view : EditorView;
+
 
     // element e
     constructor(eIds : string[], onChange, diagsSource) {
+        if (eIds.length != 1)
+            throw new Error('not implemented: `cm6` frontend requires a single element')
 
         let { container, area } = editorAppend(eIds[0]);
 
@@ -70,7 +74,7 @@ export class CoqCodeMirror6 {
         diagsSource.addEventListener('clear', (e) => {
             this.clearMarks();
         });
-    
+
         diagsSource.addEventListener('diags', (e) => {
             let { diags, version } = e.detail;
             if (version == this.version) {
@@ -95,8 +99,6 @@ export class CoqCodeMirror6 {
 
     markDiagnostic(d : Diagnostic) {
 
-        // if(version < d.version) return;
-
         var from = d.range.start.offset, to = d.range.end_.offset;
 
         var mclass = (d.severity === 1) ? 'coq-eval-failed' : 'coq-eval-ok';
@@ -106,13 +108,20 @@ export class CoqCodeMirror6 {
         this.view.dispatch(tr);
 
         // Debug code.
-        var from_ = { line: d.range.start.line, ch: d.range.start.character };
-        var to_ = { line: d.range.end_.line, ch: d.range.end_.character };
+        {
+            let from = { line: d.range.start.line, ch: d.range.start.character },
+                to = { line: d.range.end_.line, ch: d.range.end_.character };
 
-        console.log(`mark from (${from_.line},${from_.ch}) to (${to_.line},${to_.ch}) class: ${mclass}`);
-        if (d.extra) console.log('extra: ', d.extra);
+            console.log(`mark from (${from.line},${from.ch}) to (${to.line},${to.ch}) class: ${mclass}`);
+            if (d.extra) console.log('extra: ', d.extra);
+        }
+
         // var d = new Decoration(from, to);
         // var doc = this.editor.getDoc();
         // doc.markText(from, to, {className: mclass});
     }
 }
+
+// Local Variables:
+// js-indent-level: 4
+// End:

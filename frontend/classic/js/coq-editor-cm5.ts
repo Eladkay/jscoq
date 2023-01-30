@@ -6,19 +6,14 @@ import { ProviderContainer } from "./cm-provider-container";
 
 /** Interface for CM5 */
 export class CoqCodeMirror5 extends ProviderContainer {
-    version : number;
-    company_coq : any;
+    private version : number;
+    private company_coq : any;
 
-    /**
-     *
-     * @param {(string | HTMLElement)[]} elementRefs
-     * @param {object} options
-     * @param {CoqManager} manager
-     */
     constructor(elementRefs, onChange, diagsSource, options, manager) {
 
         super(elementRefs, options, manager);
 
+        this.options = options;
         this.manager = manager;
         this.version = 1;
 
@@ -44,6 +39,7 @@ export class CoqCodeMirror5 extends ProviderContainer {
     }
 
     getCursorOffset() {
+        /** @todo need to get the focused one and add the offset of the ones above it */
         return this.snippets[0].getCursorOffset();
     }
 
