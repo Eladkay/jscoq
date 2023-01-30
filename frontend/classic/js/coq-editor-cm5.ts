@@ -3,7 +3,6 @@
  */
 import CodeMirror from "codemirror";
 import { ProviderContainer } from "./cm-provider-container";
-import { CompanyCoq } from "./addon/company-coq";
 
 /** Interface for CM5 */
 export class CoqCodeMirror5 extends ProviderContainer {
@@ -16,7 +15,7 @@ export class CoqCodeMirror5 extends ProviderContainer {
      * @param {object} options
      * @param {CoqManager} manager
      */
-    constructor(elementRefs, options, manager) {
+    constructor(elementRefs, onChange, diagsSource, options, manager) {
 
         super(elementRefs, options, manager);
 
@@ -26,12 +25,20 @@ export class CoqCodeMirror5 extends ProviderContainer {
         this.onChange = () => {
             let txt = this.getValue();
             this.version++;
-            this.onChange(this.editor, txt, this.version);
+            this.onChange(txt, this.version);
+        };
+
+        diagsSource.addEventListener('clear', (e) => {
+            this.clearMarks();
         });
-        if (this.options.mode && this.options.mode['company-coq']) {
-            this.company_coq = new CompanyCoq(this.manager);
-            this.company_coq.attach(this.editor);
-        }
+
+        diagsSource.addEventListener('diags', (e) => {
+            let { diags, version } = e.detail;
+            if (version == this.version) {
+                for (let d of diags)
+                    this.markDiagnostic(d);
+            }
+        });
 
         CoqCodeMirror5._set_keymap();
     }
@@ -50,7 +57,7 @@ export class CoqCodeMirror5 extends ProviderContainer {
             part.retract();
     }
 
-    markDiagnostic(diag, version) {
+    markDiagnostic(diag) {
         console.log(diag);
         // Find the part that contains the target line
         let ln = 0, start_ln = diag.range.start.line, in_part = undefined;

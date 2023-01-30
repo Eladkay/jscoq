@@ -107,11 +107,13 @@ export class CoqManager {
         if (!CoqEditor)
             throw new Error(`invalid frontend specification: '${this.options.frontend}'`);
 
-        this.editor = new CoqEditor(elems, this.options, this);
+        let onChange = throttle(200, (newText, version) => {
+                if (this.coq)
+                    this.coq.update(this.preprocess(newText), version);
+            });
 
-        this.editor.onChange = throttle(200, (newText, version) => {
-            this.coq.update(this.preprocess(newText), version);
-        });
+        this.diagsSource = new EventTarget();
+        this.editor = new CoqEditor(elems, onChange, this.diagsSource);
 
         // Setup preprocess method for markdown, if needed
         var preprocessFunc = { 'plain': x => x, 'markdown': this.markdownPreprocess };
@@ -342,15 +344,17 @@ export class CoqManager {
      */
     async coqNotification(diags, version) {
 
-        this.editor.clearMarks();
+        this.diagsSource.dispatchEvent(new CustomEvent('clear', { }));
 
         console.log("Diags received: " + diags.length.toString());
+        this.diagsSource.dispatchEvent(new CustomEvent('diags', { detail : { diags, version } }));
+
         let needRecheck = false, pending;
         for (let d of diags.reverse()) {
             for (let extra of d.extra) {
                 if (extra[0] === 'FailedRequire' &&
                         (pending = this.handleRequires(extra))) {
-                    this.editor.markDiagnostic({...d, inProgress: true});
+                    // this.editor.markDiagnostic({...d, inProgress: true});
                     needRecheck = true;
                     await pending;
                     /** @todo clear the mark? */
@@ -360,9 +364,9 @@ export class CoqManager {
             // this.layout.log("Diag", 'Info');
             // this.layout.log(d.message, 'Info');
             // this.layout.log(JSON.stringify(d), 'Info');
-            if (d.severity < 4 && !needRecheck) {
-                this.editor.markDiagnostic(d, version);
-            }
+            // if (d.severity < 4 && !needRecheck) {
+                // this.editor.markDiagnostic(d, version);
+            // }
         }
 
         /* if packages were loaded, need to re-create the document
@@ -460,11 +464,11 @@ export class CoqManager {
 
     /**
      * Strip off plain text, leaving the Coq text.
-     * @param {string} text 
+     * @param {string} text
      */
     markdownPreprocess(text) {
         let wsfill = s => s.replace(/[^\n]/g, ' ');
-        return text.split(/```([^]*?)```/g)
+        return text.split(/```coq([^]*?)```/g)
                    .map((x, i) => i & 1 ? `   ${x}   ` : wsfill(x))
                    .join('');
     }

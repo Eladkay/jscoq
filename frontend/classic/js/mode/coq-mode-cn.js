@@ -40,7 +40,7 @@
 /*                                                                      */
 /************************************************************************/
 
-import CodeMirror from 'codemirror';
+import CodeMirror from '@curvenote/editor/node_modules/codemirror';
 
 (function(mod) {
   if (typeof exports == "object" && typeof module == "object") // CommonJS

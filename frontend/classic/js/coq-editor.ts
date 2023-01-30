@@ -6,18 +6,24 @@
  */
 import { Diagnostic } from "../../../backend";
 
+export type DiagnosticEvent = {
+    diags : Diagnostic[];
+    version : number;
+}
+
 /**
  * Interface for Coq Editor's
  */
+
 export interface ICoqEditor {
-    getValue() : string;
-    onChange() : void;
-    onChangeRev(newContent, version) : void;
-    clearMarks() : void;
-    markDiagnostic(d : Diagnostic, version: number) : void;
     getCursorOffset() : number;
 }
 
+export interface ICoqEditorConstructor {
+    new(elems : string, 
+         onChange : (newContent : string, version : number) => void,
+         diagsSource : EventTarget) : ICoqEditor;
+    }
 /**
  * Takes a textArea and will create an empty div to attach an editor to.
  * @param {(string | HTMLElement)} eId 

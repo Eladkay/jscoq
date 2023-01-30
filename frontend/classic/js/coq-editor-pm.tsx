@@ -18,7 +18,7 @@ import 'sidenotes/dist/sidenotes.css';
 import '@curvenote/components/dist/curvenote';
 import '@curvenote/editor/dist/editor.css';
 
-import './mode/coq-mode.js';
+import './mode/coq-mode-cn.js';
 
 import { Provider } from 'react-redux';
 
@@ -113,8 +113,34 @@ declare global {
 export function createStore(): Store {
     return createReduxStore(rootReducer, applyMiddleware(...middleware));
   }
+/*   this.view =
+  new EditorView(container, {
+      state: EditorState.create({
+          doc: doc,
+          plugins: [...exampleSetup({schema: schema}), coqDiags]
+      }),
+      // We update the text area
+      dispatchTransaction(tr) {
+          // Update textarea only if content has changed
+          if (tr.docChanged) {
 
-function JsCoqEditor( { content, store = createStore() }) {
+              // We update the version!
+              pm.version++;
+
+              let newDoc = CoqProseMirror.serializeDoc(tr.doc);
+              pm.onChangeRev(newDoc, pm.version);
+
+              var newMarkdown = defaultMarkdownSerializer.serialize(tr.doc);
+              area.value = newMarkdown;
+          }
+
+          const { state } = this.state.applyTransaction(tr);
+          this.updateState(state);
+      },
+  });
+
+this.view.focus(); */
+function JsCoqEditor( { content, store = createStore(), onChange, diagsSource }) {
  
     const [reduxStore, setStore] = useState<Store | null>(null);
     const [{ newCommentFn, removeCommentFn }, setFn] = useState<any>({
@@ -162,10 +188,10 @@ function JsCoqEditor( { content, store = createStore() }) {
                 title: '',
                 },
             ],
-                createLinkSearch: async () => ({ search: () => someLinks }),
-                getCaptionFragment: (schema) => Fragment.fromArray([schema.text('Hello caption world!')]),
-                nodeViews: {},
-            };
+            createLinkSearch: async () => ({ search: () => someLinks }),
+            getCaptionFragment: (schema) => Fragment.fromArray([schema.text('Hello caption world!')]),
+            nodeViews: {},
+        };
         setup(store, opts);
         window.store = store;
         store.dispatch(actions.initEditorState('full', stateKey, true, content, 0));
@@ -263,15 +289,13 @@ function JsCoqEditor( { content, store = createStore() }) {
     )
 }
 export class CoqProseMirror implements ICoqEditor {
-    private version : number;
-    private view : EditorView;
 
     /**
      * Initializes a Prosemirror isntance given the areaID
      */
-     constructor(areaIds : string | string[]) {
+     constructor(elems : string | string[], onChange, diagsSource) {
 
-        let areaId = (typeof areaIds === "string") ? areaIds : areaIds[0];
+        let areaId = (typeof elems === "string") ? elems : elems[0];
 
         let area : HTMLTextAreaElement = document.getElementById(areaId) as HTMLTextAreaElement;
         area.style.display = 'none';
@@ -288,40 +312,9 @@ export class CoqProseMirror implements ICoqEditor {
 
         var doc = fromMarkdown(area.value, 'full' );
         var doc_json = JSON.stringify(doc.toJSON());
-        var pm = this;
 
-        this.version = 1;
         console.log(doc);
-        ReactDOM.render(<JsCoqEditor content={doc_json}/>, container);
-        return;
-
-        this.view =
-            new EditorView(container, {
-                state: EditorState.create({
-                    doc: doc,
-                    plugins: [...exampleSetup({schema: schema}), coqDiags]
-                }),
-                // We update the text area
-                dispatchTransaction(tr) {
-                    // Update textarea only if content has changed
-                    if (tr.docChanged) {
-
-                        // We update the version!
-                        pm.version++;
-
-                        let newDoc = CoqProseMirror.serializeDoc(tr.doc);
-                        pm.onChangeRev(newDoc, pm.version);
-
-                        var newMarkdown = defaultMarkdownSerializer.serialize(tr.doc);
-                        area.value = newMarkdown;
-                    }
-
-                    const { state } = this.state.applyTransaction(tr);
-                    this.updateState(state);
-                },
-            });
-
-        this.view.focus();
+        ReactDOM.render(<JsCoqEditor content={doc_json} onChange={onChange} diagsSource={diagsSource}/>, container);
     }
 
     static serializeDoc(doc) {
@@ -333,34 +326,31 @@ export class CoqProseMirror implements ICoqEditor {
 
     getValue() {
         return "";
-        return CoqProseMirror.serializeDoc(this.view.state.doc);
+        // return CoqProseMirror.serializeDoc(this.view.state.doc);
     }
-
-    onChange() { }
-    onChangeRev(newText, version) { }
 
     clearMarks() {
         return ;
-        var tr = this.view.state.tr;
+   /*      var tr = this.view.state.tr;
         tr.setMeta(coqDiags, "clear");
-        this.view.dispatch(tr);
+        this.view.dispatch(tr); */
     }
 
     getCursorOffset() {
-        return ;
-        return this.view.state.selection.head;
+        return 0;
+/*         return this.view.state.selection.head; */
     }
 
     markDiagnostic(d, version) {
         return ;
 
         // This is racy w.r.t. user edits if we don't check the
-        // document version; async stuff, always fun :)
+/*         // document version; async stuff, always fun :)
         if (version === this.version) {
             var tr = this.view.state.tr;
             tr.setMeta(coqDiags, diagNew(d));
             this.view.dispatch(tr);
-        }
+        } */
     }
 
     static process_node(acc) {

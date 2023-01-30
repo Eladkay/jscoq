@@ -2,7 +2,7 @@
 import { EditorState, RangeSet, Facet, StateEffect, StateField } from "@codemirror/state";
 import { EditorView, lineNumbers, Decoration, ViewPlugin } from "@codemirror/view";
 
-// import { Diagnostic } from '../../../backend/coq-worker';
+import { Diagnostic } from '../../../backend/coq-worker';
 
 // import './mode/coq-mode.js';
 
@@ -43,13 +43,9 @@ export class CoqCodeMirror6 {
     version : number = 1;
 
     // element e
-    constructor(eIds : string[]) {
+    constructor(eIds : string[], onChange, diagsSource) {
 
         let { container, area } = editorAppend(eIds[0]);
-
-        var obj_ref = this;
-
-        // this._set_keymap();
 
         var extensions =
             [ diagField,
@@ -60,7 +56,7 @@ export class CoqCodeMirror6 {
                       var newText = v.state.doc.toString();
                       area.value = newText;
                       this.version++;
-                      obj_ref.onChange(newText, this.version);
+                      onChange(newText, this.version);
                   }})
             ];
 
@@ -71,13 +67,19 @@ export class CoqCodeMirror6 {
               parent: container,
               extensions
             });
-
+        diagsSource.addEventListener('clear', (e) => {
+            this.clearMarks();
+        });
+    
+        diagsSource.addEventListener('diags', (e) => {
+            let { diags, version } = e.detail;
+            if (version == this.version) {
+                for (let d of diags)
+                    this.markDiagnostic(d);
+            }
+        });
     }
 
-    // To be overriden by the manager
-    onChange(cm, version) {
-        return;
-    }
     getCursorOffset() {
         return this.view.state.selection.main.head;
     }
@@ -91,9 +93,9 @@ export class CoqCodeMirror6 {
         this.view.dispatch(tr);
     }
 
-    markDiagnostic(d : Diagnostic, version) {
+    markDiagnostic(d : Diagnostic) {
 
-        if(version < d.version) return;
+        // if(version < d.version) return;
 
         var from = d.range.start.offset, to = d.range.end_.offset;
 
