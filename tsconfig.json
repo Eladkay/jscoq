@@ -13,7 +13,9 @@
     "resolveJsonModule": true,
     "downlevelIteration": true,
     "allowSyntheticDefaultImports": true,
-    "checkJs": true
+    "checkJs": true,
+    "allowJs": true,
+    "jsx": "react-jsx"
     // "noEmit": true
   },
   "include": [ "frontend/**/*.ts", "backend/**/*.ts"],

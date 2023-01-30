@@ -7,7 +7,13 @@
     <!-- Move to copy with the bundle -->
     <link rel="icon" href="frontend/classic/images/favicon.png">
     <style>body { visibility: hidden; } /* FOUC avoidance */</style>
-    <link rel="stylesheet" type="text/css" href="./dist/frontend/index.css";
+    <link rel="stylesheet" type="text/css" href="./dist/frontend/index.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css"
+      integrity="sha384-MlJdn/WNKDGXveldHDdyRP1R4CTHr3FeuDNfhsLPYrq2t0UBkUdK2jyTnXPEK1NQ"
+      crossorigin="anonymous"
+    />
   </head>
 
 <body class="jscoq-main">
@@ -68,12 +74,12 @@
 - Coq will recognize the code snippets as Coq
 - You will be able to save the document and link to other documents soon
 
-```
+```coq
 From Coq Require Import List.
 Import ListNotations.
 ```
 
-```
+```coq
 Lemma rev_snoc_cons A :
   forall (x : A) (l : list A), rev (l ++ [x]) = x :: rev l.
 Proof.
@@ -84,7 +90,7 @@ Qed.
 ```
 
 Try to update _above_ and **below**:
-```
+```coq
 Theorem rev_rev A : forall (l : list A), rev (rev l) = l.
 Proof.
   induction l.
@@ -92,6 +98,10 @@ Proof.
   - simpl. rewrite rev_snoc_cons. rewrite IHl.
     reflexivity.
 Qed.
+```
+
+```javascript
+let a = 3;
 ```
 
 Please edit your code here!
@@ -115,8 +125,8 @@ Please edit your code here!
     var jscoq_opts = {
         backend:   sp.get('backend'),
         implicit_libs: false,
-        frontend: sp.get('frontend') || 'cm6',
-        content_type: sp.get('content_type') || 'markdown',
+        frontend: sp.get('frontend') || 'pm',
+        content_type: sp.get('content_type') || 'plain',
         focus: false,
         debug: true,
         editor: { mode: { 'company-coq': true } },

@@ -14,7 +14,7 @@ export interface ICoqEditor {
     onChange() : void;
     onChangeRev(newContent, version) : void;
     clearMarks() : void;
-    markDiagnostic(d : Diagnostic) : void;
+    markDiagnostic(d : Diagnostic, version: number) : void;
     getCursorOffset() : number;
 }
 
