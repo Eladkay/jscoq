@@ -3,7 +3,7 @@ import { EditorState, RangeSet, Facet, StateEffect, StateField } from "@codemirr
 import { EditorView, lineNumbers, Decoration, ViewPlugin } from "@codemirror/view";
 
 import { Diagnostic } from '../../../backend/coq-worker';
-import { editorAppend } from './coq-editor';
+import { editorAppend, ICoqEditor } from './coq-editor';
 
 // import './mode/coq-mode.js';
 
@@ -39,7 +39,7 @@ const diagField = StateField.define({
 /** Interface for CM5
  * @implements ICoqEditor
  */
-export class CoqCodeMirror6 {
+export class CoqCodeMirror6 implements ICoqEditor {
     private version : number = 1;
     private view : EditorView;
 

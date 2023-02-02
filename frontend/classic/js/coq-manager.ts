@@ -11,7 +11,7 @@
 "use strict";
 
 // Backend imports
-import { Future, CoqWorker, CoqSubprocessAdapter } from '../../../backend';
+import { Future, CoqWorker, CoqSubprocessAdapter, CoqInitOptions } from '../../../backend';
 
 /**
  * @typedef { import("../../../backend").Diagnostic } Diagnostic
@@ -42,6 +42,7 @@ import { CmCoqProvider } from './cm-provider';
 import { CoqCodeMirror5 } from './coq-editor-cm5';
 import { CoqCodeMirror6 } from './coq-editor-cm6';
 import { CoqProseMirror } from './coq-editor-pm';
+import { ICoqEditor, ICoqEditorConstructor } from './coq-editor';
 
 /**
  * Coq Document Manager, client-side.
@@ -55,12 +56,24 @@ import { CoqProseMirror } from './coq-editor-pm';
  * @class CoqManager
  */
 export class CoqManager {
+    options : any;
+    coq : CoqWorker;
+    diagsSource : EventTarget;
+    editor : ICoqEditor;
+    layout : CoqLayoutClassic;
+    packages : PackageManager;
+    navEnabled : boolean;
+    preprocess : (text : string) => string;
+    contextual_info : any;
+    pprint : any;
+    when_ready : Future<void>;
+    project : any;
+    version_info : string;
+    collab : any;
 
+    
     /**
      * Creates an instance of CoqManager.
-     * @param {string[]} elems
-     * @param {object} options
-     * @memberof CoqManager
      */
     constructor(elems, options) {
 
@@ -102,7 +115,7 @@ export class CoqManager {
         // Setup the Coq editor.
         CmCoqProvider._set_keymap();
         var frontend = { 'pm': CoqProseMirror, 'cm5': CoqCodeMirror5, 'cm6': CoqCodeMirror6 };
-        var CoqEditor = frontend[this.options.frontend];
+        var CoqEditor : ICoqEditorConstructor = frontend[this.options.frontend];
 
         if (!CoqEditor)
             throw new Error(`invalid frontend specification: '${this.options.frontend}'`);
@@ -171,10 +184,11 @@ export class CoqManager {
         const editorThemes = {'light': 'default', 'dark': 'blackboard'};
         this.layout.settings.model.theme.observe(theme => {
             /* this might take some time (do async like renumber?) */
-            this.editor.configure({theme: editorThemes[theme]});
-            this.editor.configure({mode: {'company-coq': enable}});
-            this.company_coq = this.contextual_info.company_coq =
-                enable ? new CompanyCoq() : undefined;
+            // XXX: Fixme
+            // this.editor.configure({theme: editorThemes[theme]});
+            // this.editor.configure({mode: {'company-coq': this.enable}});
+            // this.company_coq = this.contextual_info.company_coq =
+            //     enable ? new CompanyCoq() : undefined;
         });
     }
 
@@ -205,8 +219,10 @@ export class CoqManager {
                     (await project()).openZip(src[0].file, src[0].file.name);
                 else
                     // TODO better check file type and size before
-                    //  opening
-                    this.editor.openFile(file);
+                    // opening
+                    // XXX: Fixme
+                    // this.editor.openFile(file);
+                    return;
             }
         });
     }
@@ -225,30 +241,18 @@ export class CoqManager {
         });
     }
 
-    async openProject(name) {
+    async openProject(name?) {
         var pane = this.layout.createOutline();
-        await this._load('dist-webpack/ide-project.browser.js');
-
-        this.project = ideProject.ProjectPanel.attach(this, pane, name);
+        const { ProjectPanel } = await import ('./ide-project');
+        this.project = ProjectPanel.attach(this, pane, name);
     }
 
-    async openCollab(documentKey) {
-        await this._load('dist-webpack/addon/collab.browser.js');
+    async openCollab(documentKey?) {
+        const { Hastebin, CollabP2P } = await import('./addon/collab');
         this.collab = {
-            hastebin: addonCollab.Hastebin.attach(this, documentKey?.hastebin),
-            p2p: addonCollab.CollabP2P.attach(this, documentKey?.p2p)
+            hastebin: Hastebin.attach(this, documentKey?.hastebin),
+            p2p: CollabP2P.attach(this, documentKey?.p2p)
         };
-    }
-
-    async _load(...hrefs) {
-        for (let href of hrefs) {
-            var uri = this.options.base_path + href,
-                el = href.endsWith('.css') ?
-                    $('<link>').attr({rel: 'stylesheet', type: 'text/css', href: uri})
-                  : $('<script>').attr({type: 'text/javascript', src: uri});
-            document.head.appendChild(el[0]); // jQuery messes with load event
-            await new Promise(resolve => el.on('load', resolve));
-        }
     }
 
     getLoadPath() {
@@ -334,7 +338,7 @@ export class CoqManager {
     coqReady() {
         this.layout.splash(this.version_info, "Coq worker is ready.", 'ready');
         this.enable();
-        this.when_ready.resolve();
+        this.when_ready.resolve(null);
     }
 
     // Coq document diagnostics.
@@ -431,7 +435,7 @@ export class CoqManager {
             `===> Loaded packages [${this.options.init_pkgs.join(', ')}]`);
 
         // Set startup parameters
-        let init_opts = {
+        let init_opts : CoqInitOptions = {
                 implicit_libs: this.options.implicit_libs,
                 coq_options: this._parseOptions(this.options.coq || {}),
                 debug: {coq: true, stm: true}
@@ -448,7 +452,7 @@ export class CoqManager {
      * @param {object} coq_options option name to value dictionary
      * @return { [any[], any[]][] }
      */
-    _parseOptions(coq_options) {
+    _parseOptions(coq_options) : [string[], any][] {
         function makeValue(value) {
             if      (Array.isArray(value))       return value;
             else if (typeof value === 'number')  return ['IntValue', value];
@@ -469,7 +473,7 @@ export class CoqManager {
     markdownPreprocess(text) {
         let wsfill = s => s.replace(/[^\n]/g, ' ');
         return text.split(/```coq([^]*?)```/g)
-                   .map((x, i) => i & 1 ? `   ${x}   ` : wsfill(x))
+                   .map((x, i) => i & 1 ? `      ${x}   ` : wsfill(x))
                    .join('');
     }
 
@@ -669,7 +673,7 @@ export class CoqManager {
 
     toolbarClickHandler(evt) {
 
-        this.editor.focus();
+        // this.editor.focus();
 
         switch (evt.target.name) {
         case 'to-cursor' :

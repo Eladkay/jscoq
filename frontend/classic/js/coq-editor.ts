@@ -16,6 +16,7 @@ export type DiagnosticEvent = {
  */
 
 export interface ICoqEditor {
+    getValue() : string;
     getCursorOffset() : number;
 }
 
@@ -29,7 +30,6 @@ export interface ICoqEditorConstructor {
  */
 export function editorAppend(eId) : { container : HTMLDivElement, area : HTMLTextAreaElement } {
 
-    var area = document.getElementById(eId) as HTMLTextAreaElement;
     var area = (eId instanceof HTMLElement ? eId : document.getElementById(eId));
 
     if (! (area instanceof HTMLTextAreaElement))

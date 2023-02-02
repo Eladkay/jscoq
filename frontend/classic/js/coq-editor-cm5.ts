@@ -3,9 +3,10 @@
  */
 import CodeMirror from "codemirror";
 import { ProviderContainer } from "./cm-provider-container";
+import { ICoqEditor } from "./coq-editor";
 
 /** Interface for CM5 */
-export class CoqCodeMirror5 extends ProviderContainer {
+export class CoqCodeMirror5 extends ProviderContainer implements ICoqEditor {
     private version : number;
     private company_coq : any;
 

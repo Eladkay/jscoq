@@ -26,13 +26,13 @@ export interface Diagnostic {
     extra: any[]
 }
 
-interface CoqInitOptions {
+export interface CoqInitOptions {
   implicit_libs?: boolean,
   coq_options?: [string[], any[]][],
   debug?: { coq?: boolean, stm?: boolean }
 }
 
-interface DocumentOptions {
+export interface DocumentOptions {
   top_name?: string,
   lib_path?: [string[], string[]][],
   lib_init?: string[]
@@ -134,11 +134,11 @@ export class CoqWorker {
 
     intvec: Int32Array;
 
-    private load_progress: (ratio: number, ev: ProgressEvent) => void;
+    load_progress: (ratio: number, ev: ProgressEvent) => void;
 
     // Misc
     private _boot : Future<void>;
-    protected when_created: Promise<void>;
+    when_created: Promise<void>;
     protected _handler: (msg : any) => void;
 
     // Needs work to move to a standard typed registration mechanism
